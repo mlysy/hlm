@@ -1,0 +1,76 @@
+---
+title: "Fitting the Heteroscedastic Model"
+author: "Martin Lysy"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fitting the Heteroscedastic Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+\newcommand{\bm}[1]{\boldsymbol{#1}}
+\newcommand{\tx}[1]{\textrm{#1}}
+\newcommand{\ind}{\stackrel{\textrm{ind}}{\sim}}
+\newcommand{\iid}{\stackrel{\textrm{iid}}{\sim}}
+\newcommand{\N}{\mathcal N}
+\newcommand{\zz}{{\bm z}}
+\newcommand{\ZZ}{{\bm Z}}
+\newcommand{\yy}{{\bm y}}
+\newcommand{\gg}{{\bm g}}
+\newcommand{\HH}{{\bm H}}
+\newcommand{\gga}{{\bm \gamma}}
+\newcommand{\FI}{\bm{\mathcal I}}
+
+
+## Setup
+
+The simplified heteroscedastic model is of the form
+$$
+y_i \ind \N\big(0, \exp(\zz_i'\gga)\big), \qquad i = 1,\ldots,n.
+$$
+The loglikelihood is given by
+$$
+\ell(\gga \mid \yy) = -\frac 1 2 \sum_{i=1}^n \left[\frac{y_i^2}{\exp(\zz_i'\gga)} + \zz_i'\gga\right].
+$$
+Its gradient and Hessian are given by
+$$
+\begin{aligned}
+\gg(\gga) & = \frac{\partial \ell(\gga \mid \yy)}{\partial \gga}  = \frac 1 2 \sum_{i=1}^n \left[\frac{y_i^2}{\exp(\zz_i'\gga)} - 1\right]\zz_i \\
+\HH(\gga) & = \frac{\partial^2 \ell(\gga \mid \yy)}{\partial \gga\partial \gga'}  = - \frac 1 2 \sum_{i=1}^n \frac{y_i^2 \zz_i\zz_i'}{\exp(\zz_i'\gga)}.
+\end{aligned}
+$$
+
+## Parameter Estimation
+
+The expected Fisher information is
+$$
+\FI(\gga) = -E[\HH(\gga)] = \frac 1 2 \sum_{i=1}^n \frac{E[y_i^2] \zz_i\zz_i'}{\exp(\zz_i'\gga)} = \tfrac 1 2 \ZZ'\ZZ.
+$$
+Therefore, the [Fisher scoring](https://en.wikipedia.org/wiki/Scoring_algorithm) algorithm is
+$$
+\gga_{m+1} = \gga_m + \FI(\gga_m)^{-1} \gg(\gga_m).
+$$
+An initial value can be found by noting that
+$$
+2 \log y_i = \zz_i'\gga + \varepsilon_i, \qquad \exp(\varepsilon_i) \iid \chi^2_{(1)}.
+$$
+Since
+$$
+E[\varepsilon_i] = \rho =  \psi(\tfrac 1 2) + \log 2,
+$$
+where $\psi(x)$ is the [digamma function](https://en.wikipedia.org/wiki/Digamma_function), an initial value for $\gga$ is given by the linear regression estimator
+$$
+\gga_0 = (\ZZ'\ZZ)^{-1}\ZZ'(2 \log \yy - \rho).
+$$
+Following the `stats::glm.fit()` function in R, the stopping criterion for the algorithm is either when more than $M_{\tx{max}}$ steps have been taken, or when
+$$
+\frac{|\ell(\gga_{m} \mid \yy) - \ell(\gga_{m-1} \mid \yy)|}{0.1 + |\ell(\gga_m \mid \yy)|} < \epsilon.
+$$

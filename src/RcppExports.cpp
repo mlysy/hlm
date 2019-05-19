@@ -19,9 +19,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lvlm_fit
+Eigen::VectorXd lvlm_fit(Eigen::VectorXd y2, Eigen::MatrixXd Z, Eigen::VectorXd gamma0);
+RcppExport SEXP _hlm_lvlm_fit(SEXP y2SEXP, SEXP ZSEXP, SEXP gamma0SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type y2(y2SEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type gamma0(gamma0SEXP);
+    rcpp_result_gen = Rcpp::wrap(lvlm_fit(y2, Z, gamma0));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_hlm_lm_fit", (DL_FUNC) &_hlm_lm_fit, 3},
+    {"_hlm_lvlm_fit", (DL_FUNC) &_hlm_lvlm_fit, 3},
     {NULL, NULL, 0}
 };
 

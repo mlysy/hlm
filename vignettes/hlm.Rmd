@@ -24,6 +24,7 @@ knitr::opts_chunk$set(
 \newcommand{\zz}{{\bm z}}
 \newcommand{\ZZ}{{\bm Z}}
 \newcommand{\yy}{{\bm y}}
+\newcommand{\ww}{{\bm w}}
 \newcommand{\gg}{{\bm g}}
 \newcommand{\HH}{{\bm H}}
 \newcommand{\gga}{{\bm \gamma}}
@@ -38,13 +39,13 @@ y_i \ind \N\big(0, \exp(\zz_i'\gga)\big), \qquad i = 1,\ldots,n.
 $$
 The loglikelihood is given by
 $$
-\ell(\gga \mid \yy) = -\frac 1 2 \sum_{i=1}^n \left[\frac{y_i^2}{\exp(\zz_i'\gga)} + \zz_i'\gga\right].
+\ell(\gga ) = -\frac 1 2 \sum_{i=1}^n \left[\frac{ y_i^2}{\exp(\zz_i'\gga)} + \zz_i'\gga\right].
 $$
 Its gradient and Hessian are given by
 $$
 \begin{aligned}
-\gg(\gga) & = \frac{\partial \ell(\gga \mid \yy)}{\partial \gga}  = \frac 1 2 \sum_{i=1}^n \left[\frac{y_i^2}{\exp(\zz_i'\gga)} - 1\right]\zz_i \\
-\HH(\gga) & = \frac{\partial^2 \ell(\gga \mid \yy)}{\partial \gga\partial \gga'}  = - \frac 1 2 \sum_{i=1}^n \frac{y_i^2 \zz_i\zz_i'}{\exp(\zz_i'\gga)}.
+\gg(\gga) & = \frac{\partial \ell(\gga )}{\partial \gga}  = \frac 1 2 \sum_{i=1}^n \left[\frac{y_i^2}{\exp(\zz_i'\gga)} - 1\right]\zz_i \\
+\HH(\gga) & = \frac{\partial^2 \ell(\gga )}{\partial \gga\partial \gga'}  = - \frac 1 2 \sum_{i=1}^n \frac{y_i^2 \zz_i\zz_i'}{\exp(\zz_i'\gga)}.
 \end{aligned}
 $$
 
@@ -72,5 +73,5 @@ $$
 $$
 Following the `stats::glm.fit()` function in R, the stopping criterion for the algorithm is either when more than $M_{\tx{max}}$ steps have been taken, or when
 $$
-\frac{|\ell(\gga_{m} \mid \yy) - \ell(\gga_{m-1} \mid \yy)|}{0.1 + |\ell(\gga_m \mid \yy)|} < \epsilon.
+\frac{|\ell(\gga_{m} ) - \ell(\gga_{m-1} )|}{0.1 + |\ell(\gga_m )|} < \epsilon.
 $$

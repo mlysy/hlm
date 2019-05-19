@@ -15,3 +15,9 @@ Suggests:
     rmarkdown,
     testthat
 VignetteBuilder: knitr
+LinkingTo: 
+    Rcpp,
+    RcppEigen
+Imports: 
+    Rcpp
+RoxygenNote: 6.1.1

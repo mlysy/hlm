@@ -1,7 +1,17 @@
 # test the fisher scoring algorithm
 
-#' @param y2 Vector of squared normal responses
-#' @param Z Matrix of covariates
+require(hlm)
+
+#' @param y2 Vector of squared normal responses.
+#' @param Z Matrix of covariates.
+#' @param gamma0 Optional initial parameter vector.  If missing an OLS estimator is used.
+#' @param maxit Maximum number of Fisher scoring iterations.
+#' @param epsilon Error tolerance.
+#' @return A list with elements:
+#' \describe{
+#'   \item{\code{coefficients}}{The fitted coefficient vector.}
+#'   \item{\code{iter}}{The number of iterations of the Fisher scoring algorithm.}
+#' }
 hlm_fit <- function(y2, Z, gamma0, maxit = 25, epsilon = 1e-8) {
   # constants and "memory allocation"
   rho <- digamma(1/2) + log(2) # mean of log-chisq(1)
@@ -28,7 +38,7 @@ hlm_fit <- function(y2, Z, gamma0, maxit = 25, epsilon = 1e-8) {
     tol <- abs(dev_new - dev)/(.1 + abs(dev_new))
     if(tol < epsilon) break else dev <- dev_new
   }
-  if(ii == maxit && tol > epsilon) stop("Fisher scoring did not converge.")
+  if(ii == maxit && tol > epsilon) warning("Fisher scoring did not converge.")
   return(list(coefficients = gamma, iter = ii))
 }
 
@@ -59,11 +69,17 @@ hfit <- hlm_fit(wy2, Z)
 hlm_loglik(coef(gfit), wy2, Z) - hlm_loglik(coef(hfit), wy2, Z)
 # difference in number of iterations
 gfit$iter - hfit$iter
-
 # check c++ code...
+maxit <- sample(1:10, 1)
+epsilon <- 10^runif(1, -10, 0)
 gamma0 <- sim_gam(p)
-hlm:::lvlm_fit(y2 = wy2, Z = Z, gamma0 = gamma0)
-hlm_fit(y2 = wy2, Z = Z, gamma0 = gamma0, maxit = 1, epsilon = Inf)
+gamma_cpp <- hlm:::lvlm_fit(y2 = wy2, Z = Z, gamma0 = gamma0, maxit = maxit, epsilon = epsilon)
+hfit_r <- hlm_fit(y2 = wy2, Z = Z, gamma0 = gamma0, maxit = maxit, epsilon = epsilon)
+gamma_r <- coef(hfit_r)
+range(gamma_cpp - gamma_r)
+
+# OK
+range(hlm:::lvlm_fitLS(logY2 = log(wy2), Z = Z) - qr.solve(Z, log(wy2) - (digamma(1/2) + log(2))))
 
 # check mode
 ## optimCheck::optim_proj(xsol = coef(hfit),

@@ -5,7 +5,11 @@ lm_fit <- function(y, X, weights) {
     .Call(`_hlm_lm_fit`, y, X, weights)
 }
 
-lvlm_fit <- function(y2, Z, gamma0) {
-    .Call(`_hlm_lvlm_fit`, y2, Z, gamma0)
+lvlm_fit <- function(y2, Z, gamma0, maxit = 25L, epsilon = 1e-8) {
+    .Call(`_hlm_lvlm_fit`, y2, Z, gamma0, maxit, epsilon)
+}
+
+lvlm_fitLS <- function(logY2, Z) {
+    .Call(`_hlm_lvlm_fitLS`, logY2, Z)
 }
 

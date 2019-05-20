@@ -20,22 +20,37 @@ BEGIN_RCPP
 END_RCPP
 }
 // lvlm_fit
-Eigen::VectorXd lvlm_fit(Eigen::VectorXd y2, Eigen::MatrixXd Z, Eigen::VectorXd gamma0);
-RcppExport SEXP _hlm_lvlm_fit(SEXP y2SEXP, SEXP ZSEXP, SEXP gamma0SEXP) {
+Eigen::VectorXd lvlm_fit(Eigen::VectorXd y2, Eigen::MatrixXd Z, Eigen::VectorXd gamma0, int maxit, double epsilon);
+RcppExport SEXP _hlm_lvlm_fit(SEXP y2SEXP, SEXP ZSEXP, SEXP gamma0SEXP, SEXP maxitSEXP, SEXP epsilonSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type y2(y2SEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Z(ZSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type gamma0(gamma0SEXP);
-    rcpp_result_gen = Rcpp::wrap(lvlm_fit(y2, Z, gamma0));
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type epsilon(epsilonSEXP);
+    rcpp_result_gen = Rcpp::wrap(lvlm_fit(y2, Z, gamma0, maxit, epsilon));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lvlm_fitLS
+Eigen::VectorXd lvlm_fitLS(Eigen::VectorXd logY2, Eigen::MatrixXd Z);
+RcppExport SEXP _hlm_lvlm_fitLS(SEXP logY2SEXP, SEXP ZSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type logY2(logY2SEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Z(ZSEXP);
+    rcpp_result_gen = Rcpp::wrap(lvlm_fitLS(logY2, Z));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_hlm_lm_fit", (DL_FUNC) &_hlm_lm_fit, 3},
-    {"_hlm_lvlm_fit", (DL_FUNC) &_hlm_lvlm_fit, 3},
+    {"_hlm_lvlm_fit", (DL_FUNC) &_hlm_lvlm_fit, 5},
+    {"_hlm_lvlm_fitLS", (DL_FUNC) &_hlm_lvlm_fitLS, 2},
     {NULL, NULL, 0}
 };
 

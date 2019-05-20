@@ -9,22 +9,31 @@
 namespace hlm {
 
   using namespace Eigen;
-  typedef const Ref<const VectorXd> cRVectorXd;
-  typedef const Ref<const MatrixXd> cRMatrixXd;
-  typedef Ref<VectorXd> RVectorXd;
-  typedef Ref<MatrixXd> RMatrixXd;
 
-  /// Weighted linear regression models.
+  /// Weighted Linear Models (LM).
+  ///
+  /// The weighted linear model (LM) is of the form
+  ///
+  /// \f[
+  /// y_i \stackrel{\textrm{ind}}{\sim} \mathcal{N}(\boldsymbol{x}_i'\boldsymbol{\beta}, \sigma^2/w_i).
+  /// \f]
   class LMFit {
   private:
+    // eigen typedefs
+    typedef const Ref<const VectorXd> cRVectorXd;
+    typedef const Ref<const MatrixXd> cRMatrixXd;
+    typedef Ref<VectorXd> RVectorXd;
+    typedef Ref<MatrixXd> RMatrixXd;
+    // dimensions of problem
     int n_;
     int p_;
+    // memory allocation
     LLT<MatrixXd> XtX_;
     MatrixXd Xw_;
   public:
     /// Default constructor.
     LMFit() {}
-    /// Size-specific constructor.
+    /// Constructor with memory allocation.
     LMFit(int n, int p);
     /// Fit the MLE of an LM.
     void fit(RVectorXd beta, cRVectorXd& y, cRMatrixXd& X);
@@ -36,7 +45,7 @@ namespace hlm {
   ///
   /// @param[in] n Integer number of observations.
   /// @param[in] p Integer number of covariates.
-  LMFit::LMFit(int n, int p) {
+  inline LMFit::LMFit(int n, int p) {
     n_ = n;
     p_ = p;
     XtX_.compute(MatrixXd::Identity(p_,p_));
@@ -47,7 +56,7 @@ namespace hlm {
   /// @param[in] y Vector of `n` responses.
   /// @param[in] X `n x p` covariate matrix.
   /// @note Should not need to store `X.adjoint() * y`, as solving triangular systems only requires the RHS to be provided sequentially...
-  void LMFit::fit(RVectorXd beta, cRVectorXd& y, cRMatrixXd& X) {
+  inline void LMFit::fit(RVectorXd beta, cRVectorXd& y, cRMatrixXd& X) {
     XtX_.compute(X.adjoint() * X);
     beta = XtX_.solve(X.adjoint() * y);
     return;
@@ -57,7 +66,7 @@ namespace hlm {
   /// @param[in] y Vector of `n` responses.
   /// @param[in] X `n x p` covariate matrix.
   /// @param[in] w Vector of `n` positive weights.
-  void LMFit::fit(RVectorXd beta, cRVectorXd& y, cRMatrixXd& X, cRVectorXd& w) {
+  inline void LMFit::fit(RVectorXd beta, cRVectorXd& y, cRMatrixXd& X, cRVectorXd& w) {
     Xw_ = w.asDiagonal() * X;
     XtX_.compute(Xw_.adjoint() * X);
     beta = XtX_.solve(Xw_.adjoint() * y);

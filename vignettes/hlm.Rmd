@@ -61,7 +61,7 @@ $$
 $$
 An initial value can be found by noting that
 $$
-2 \log y_i = \zz_i'\gga + \varepsilon_i, \qquad \exp(\varepsilon_i) \iid \chi^2_{(1)}.
+\log(y_i^2) = \zz_i'\gga + \varepsilon_i, \qquad \exp(\varepsilon_i) \iid \chi^2_{(1)}.
 $$
 Since
 $$
@@ -69,7 +69,7 @@ E[\varepsilon_i] = \rho =  \psi(\tfrac 1 2) + \log 2,
 $$
 where $\psi(x)$ is the [digamma function](https://en.wikipedia.org/wiki/Digamma_function), an initial value for $\gga$ is given by the linear regression estimator
 $$
-\gga_0 = (\ZZ'\ZZ)^{-1}\ZZ'(2 \log \yy - \rho).
+\gga_0 = (\ZZ'\ZZ)^{-1}\ZZ'(\log \yy^2 - \rho).
 $$
 Following the `stats::glm.fit()` function in R, the stopping criterion for the algorithm is either when more than $M_{\tx{max}}$ steps have been taken, or when
 $$

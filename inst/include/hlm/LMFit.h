@@ -28,7 +28,8 @@ namespace hlm {
     int n_;
     int p_;
     // memory allocation
-    LLT<MatrixXd> XtX_;
+    LLT<MatrixXd> llt_;
+    MatrixXd XtX_;
     MatrixXd Xw_;
   public:
     /// Default constructor.
@@ -48,8 +49,9 @@ namespace hlm {
   inline LMFit::LMFit(int n, int p) {
     n_ = n;
     p_ = p;
-    XtX_.compute(MatrixXd::Identity(p_,p_));
+    llt_.compute(MatrixXd::Identity(p_,p_));
     Xw_ = MatrixXd::Zero(n_,p_);
+    XtX_ = MatrixXd::Identity(p_,p_);
   }
 
   /// @param[out] beta MLE vector.
@@ -57,8 +59,10 @@ namespace hlm {
   /// @param[in] X `n x p` covariate matrix.
   /// @note Should not need to store `X.adjoint() * y`, as solving triangular systems only requires the RHS to be provided sequentially...
   inline void LMFit::fit(RVectorXd beta, cRVectorXd& y, cRMatrixXd& X) {
-    XtX_.compute(X.adjoint() * X);
-    beta = XtX_.solve(X.adjoint() * y);
+    XtX_.noalias() = X.adjoint() * X;
+    llt_.compute(XtX_);
+    beta.noalias() = X.adjoint() * y;
+    llt_.solveInPlace(beta);
     return;
   }
 
@@ -68,8 +72,10 @@ namespace hlm {
   /// @param[in] w Vector of `n` positive weights.
   inline void LMFit::fit(RVectorXd beta, cRVectorXd& y, cRMatrixXd& X, cRVectorXd& w) {
     Xw_ = w.asDiagonal() * X;
-    XtX_.compute(Xw_.adjoint() * X);
-    beta = XtX_.solve(Xw_.adjoint() * y);
+    XtX_.noalias() = Xw_.adjoint() * X;
+    llt_.compute(XtX_);
+    beta.noalias() = Xw_.adjoint() * y;
+    llt_.solveInPlace(beta);
     return;
   }
 

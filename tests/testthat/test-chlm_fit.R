@@ -15,21 +15,19 @@ y <- rnorm(n, mean = mu, sd = sig)
 delta <- sample(c(TRUE, FALSE),
                 size = n, replace = TRUE, prob = c(.9, .1))
 
-beta0 <- rep(0, p)
-gamma0 <- rep(0, q)
 maxit <- 1000
 epsilon <- 1e-6
 system.time({
-  chfit <- chlm_fitR(y = y, delta = delta, X = X, Z = Z,
-                     maxit = maxit, epsilon = epsilon)
+  chfit <- chlm_fit(y = y, delta = delta, X = X, Z = Z,
+                    maxit = maxit, epsilon = epsilon)
 })
 
 
-optimCheck::optim_proj(xsol = c(chfit$beta, chfit$gamma),
-                       fun = function(theta) {
-                         chlm_loglik(theta[1:p], theta[p+1:q],
-                                     y = y, delta = delta, X = X, Z = Z)
-                       })
+## optimCheck::optim_proj(xsol = c(chfit$beta, chfit$gamma),
+##                        fun = function(theta) {
+##                          chlm_loglik(theta[1:p], theta[p+1:q],
+##                                      y = y, delta = delta, X = X, Z = Z)
+##                        })
 
 ## system.time({
 ##   chfit2 <- chlm_fit_old(y = y, delta = delta,

@@ -61,10 +61,15 @@ chlm_loglik <- function(beta, gamma, y, delta, X, Z) {
 chlm_fit <- function(y, delta, X, Z,
                      maxit = 1000, epsilon = 1e-8, splitE = FALSE) {
   # helper functions
+  # loglikelihood
   loglik <- function(beta, gamma) {
     chlm_loglik(beta, gamma, y, delta, X, Z)
   }
-  # E[Z|Z>a]
+  # relative error
+  relerr <- function(x_new, x_old) {
+    abs(x_new - x_old)/(.1 + abs(x_new))
+  }
+  # truncated expectation of standard normal: E[Z|Z>a]
   etnorm <- function(a) {
     return(dnorm(a)/pnorm(-a))
   }
@@ -128,8 +133,10 @@ chlm_fit <- function(y, delta, X, Z,
     # M-step: gamma
     Xb <- c(X %*% beta)
     U <- S + Xb * (Xb - 2*R)
+    U <- pmax(U, 1e-10) # FUDGE!!!
     gamma <- .lvlm_fit(y2 = U, Z = Z)
     ll_new <- loglik(beta, gamma)
+    ## if(is.na(ll_new)) browser()
     tol <- relerr(ll_new, ll_old)
     if(tol < epsilon) break else ll_old <- ll_new
   }

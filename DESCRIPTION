@@ -13,7 +13,8 @@ LazyData: true
 Suggests: 
     knitr,
     rmarkdown,
-    testthat
+    testthat,
+    numDeriv
 VignetteBuilder: knitr
 LinkingTo: 
     Rcpp,

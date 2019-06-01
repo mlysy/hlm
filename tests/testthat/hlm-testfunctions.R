@@ -10,6 +10,34 @@ relerr <- function(x_new, x_old) {
   abs(x_new - x_old)/(.1 + abs(x_new))
 }
 
+lvlm_loglik <- function(gamma, y2, Z) {
+  Zg <- c(Z %*% gamma)
+  -.5 * sum(y2/exp(Zg) + Zg)
+}
+
+lvlm_fitIRLS_R <- function(y2, Z, gamma0, maxit = 25, epsilon = 1e-8) {
+  rho <- digamma(1/2) + log(2) # mean of log-chisq(1)
+  loglik <- function(gamma) lvlm_loglik(gamma, y2, Z)
+  logY2 <- log(y2)
+  # initial value
+  if(missing(gamma0)) {
+    gamma0 <- c(solve(crossprod(Z), crossprod(Z, log(y2) - rho)))
+  }
+  gamma <- gamma0
+  ll_old <- loglik(gamma)
+  for(ii in 1:maxit) {
+    mu <- logY2 - c(Z %*% gamma)
+    wgt <- (exp(mu) - 1)/mu
+    Zw <- Z * wgt
+    gamma <- c(solve(crossprod(Zw, Z), crossprod(Zw, logY2)))
+    # check tolerance
+    ll_new <- loglik(gamma)
+    tol <- relerr(ll_new, ll_old)
+    if(tol < epsilon) break else ll_old <- ll_new
+  }
+  if(ii == maxit && tol > epsilon) warning("IRLS did not converge.")
+  return(list(coefficients = gamma, iter = ii, loglik = ll_new))
+}
 
 #' @param y2 Vector of squared normal responses.
 #' @param Z Matrix of covariates.
@@ -21,14 +49,15 @@ relerr <- function(x_new, x_old) {
 #'   \item{\code{coefficients}}{The fitted coefficient vector.}
 #'   \item{\code{iter}}{The number of iterations of the Fisher scoring algorithm.}
 #' }
-lvlm_fitR <- function(y2, Z, gamma0, maxit = 25, epsilon = 1e-8) {
+lvlm_fitFS_R <- function(y2, Z, gamma0, maxit = 25, epsilon = 1e-8) {
   # constants and "memory allocation"
   rho <- digamma(1/2) + log(2) # mean of log-chisq(1)
   ZtZ <- crossprod(Z) # Z'Z
   # deviance function
-  loglik <- function(gam) {
-    zg <- c(Z %*% gam)
-    -.5 * sum(y2/exp(zg) + zg)
+  loglik <- function(gamma) {
+    lvlm_loglik(gamma, y2, Z)
+    ## zg <- c(Z %*% gam)
+    ## -.5 * sum(y2/exp(zg) + zg)
   }
   # initial value
   if(missing(gamma0)) {
@@ -48,7 +77,7 @@ lvlm_fitR <- function(y2, Z, gamma0, maxit = 25, epsilon = 1e-8) {
     if(tol < epsilon) break else ll_old <- ll_new
   }
   if(ii == maxit && tol > epsilon) warning("Fisher scoring did not converge.")
-  return(list(coefficients = gamma, iter = ii))
+  return(list(coefficients = gamma, iter = ii, loglik = ll_new))
 }
 
 hlm_loglik <- function(beta, gamma, y, X, Z) {
@@ -57,7 +86,8 @@ hlm_loglik <- function(beta, gamma, y, X, Z) {
     sum(dnorm(y, mean = mu, sd = sig, log = TRUE))
 }
 
-hlm_fitR <- function(y, X, Z, beta0, gamma0, maxit = 25, epsilon = 1e-8) {
+hlm_fit_R <- function(y, X, Z, beta0, gamma0,
+                     maxit = 25, epsilon = 1e-8, method = 1) {
   C <- length(y)/2 * log(2*pi)
   loglik <- function(beta, gamma) {
     hlm_loglik(beta = beta, gamma = gamma, y = y, X = X, Z = Z) + C
@@ -71,7 +101,11 @@ hlm_fitR <- function(y, X, Z, beta0, gamma0, maxit = 25, epsilon = 1e-8) {
     beta <- coef(lm.wfit(x = X, y = y, w = w))
     # update gamma
     y2 <- (y - c(X %*% beta))^2
-    gamma <- coef(lvlm_fitR(y2 = y2, Z = Z))
+    if(method == 0) {
+      gamma <- coef(lvlm_fitFS_R(y2 = y2, Z = Z))
+    } else if(method == 1) {
+      gamma <- coef(lvlm_fitIRLS_R(y2 = y2, Z = Z))
+    }
     ll_new <- loglik(beta, gamma)
     tol <- relerr(ll_new, ll_old)
     ## message("ll_old = ", ll_old, ", ll_new = ", ll_new)
@@ -92,9 +126,9 @@ hlm_fitR <- function(y, X, Z, beta0, gamma0, maxit = 25, epsilon = 1e-8) {
 ##   sum(ans)
 ## }
 
-chlm_fitR <- function(y, delta, X, Z,
-                      beta0, gamma0,
-                      maxit = 25, epsilon = 1e-8, splitE = FALSE) {
+chlm_fit_R <- function(y, delta, X, Z,
+                       beta0, gamma0,
+                       maxit = 25, epsilon = 1e-8, splitE = FALSE) {
   # precomputations
   ## C <- length(y)/2 * log(2*pi)
   N <- length(y)
@@ -139,7 +173,7 @@ chlm_fitR <- function(y, delta, X, Z,
   .lvlm_fit <- function(y2, Z, gamma0) {
     ## coef(glm.fit(x = Z, y = y2, family = Gamma(link = "log")))
     if(missing(gamma0)) gamma0 <- hlm:::lvlm_fitLS(logY2 = log(y2), Z = Z)
-    hlm:::lvlm_fit(y2 = y2, Z = Z, gamma0 = gamma0)
+    hlm:::lvlm_fitIRLS(y2 = y2, Z = Z, gamma0 = gamma0)
   }
   # initialize algorithm
   if(missing(beta0)) beta0 <- .lm_fit(y = y, X = X)

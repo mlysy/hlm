@@ -7,7 +7,7 @@
 /// - HLMFit::fit should be overloaded such that precomputed `ZtZ_` can be supplied.  In fact, should perhaps restructure io arguments:
 ///
 ///     - `niter` and `error` (and even `llik`) can be returned separately via e.g. `fitStats`.
-///     - boolean argument `calcZtZ` combined with `setZtZ` method.
+///     - boolean argument `calcZtZ` combined with `set_ZtZ` method.
 ///
 /// - check aliasing!  In fact, am I understanding "temporaries" correctly, i.e., is is more/less efficient to preallocate memory for temporary storage?
 ///
@@ -47,11 +47,14 @@ namespace hlm {
     int n_;
     int p_;
     // memory allocation
-    LLT<MatrixXd> ZtZ_;
+    LLT<MatrixXd> llt_;
     VectorXd wy2_;
     VectorXd logY2_;
     VectorXd Zg_;
+    MatrixXd Zw_;
+    MatrixXd ZtZ_;
     VectorXd score_;
+    VectorXd gamma0_;
     // control parameters
     int maxit_;
     double epsilon_;
@@ -65,27 +68,39 @@ namespace hlm {
     double rel_err(double x_new, double x_old) {
       return fabs(x_new - x_old)/(0.1 + fabs(x_new));
     }
+    /// Avoid memory allocation when `gamma` and `gamma0` refer to same external object.
+    void set_gamma(RVectorXd gamma, cRVectorXd& gamma0) {
+      gamma0_ = gamma0;
+      gamma = gamma0_;
+      return;
+    }
   public:
     /// Set fitting control parameters.
     void fitControl(int maxit = 25, double epsilon = 1e-8);
     /// Convergence statistics from the fitting algorithm.
     void fitStats(double& llik, int& niter, double& error);
     /// Initialize the Fisher scoring matrix solver.
-    void setZtZ(cRMatrixXd& Z);
+    void set_ZtZ(cRMatrixXd& Z);
     /// Default constructor.
     LVLMFit();
     /// Constructor with memory allocation.
     LVLMFit(int n, int p);
     /// Loglikelihood function.
     double loglik(cRVectorXd& gamma, cRVectorXd& y2, cRMatrixXd& Z);
-    /// Fit the MLE of an LVLM.
-    void fit(RVectorXd gamma,
-	     cRVectorXd& y2, cRMatrixXd& Z,
-	     cRVectorXd& gamma0, bool calcZtZ = true);
-    /// Fit the MLE of an LVLM.
-    void fit(RVectorXd gamma,
-    	     cRVectorXd& y2, cRMatrixXd& Z, bool calcZtZ = true);
-    /// Least-Squares estimate of the parameter vector
+    /// Fit the MLE of an LVLM by Fisher Scoring algorithm.
+    void fitFS(RVectorXd gamma,
+	       cRVectorXd& y2, cRMatrixXd& Z,
+	       cRVectorXd& gamma0, bool calcZtZ = true);
+    /// Fit the MLE of an LVLM by Fisher Scoring algorithm.
+    void fitFS(RVectorXd gamma,
+	       cRVectorXd& y2, cRMatrixXd& Z, bool calcZtZ = true);
+    /// Fit the MLE of an LVLM by Iteratively Reweighted Least-Squares algorithm.
+    void fitIRLS(RVectorXd gamma,
+		 cRVectorXd& y2, cRMatrixXd& Z, cRVectorXd& gamma0);
+    /// Fit the MLE of an LVLM by Iteratively Reweighted Least-Squares algorithm.
+    void fitIRLS(RVectorXd gamma,
+		 cRVectorXd& y2, cRMatrixXd& Z);
+    /// Least-Squares estimate of the parameter vector.
     void fitLS(RVectorXd gamma, cRVectorXd& logY2, cRMatrixXd& Z,
 	       bool calcZtZ = true);
   };
@@ -103,14 +118,17 @@ namespace hlm {
     fitControl();
     n_ = n;
     p_ = p;
-    ZtZ_.compute(MatrixXd::Identity(p_,p_));
+    ZtZ_ = MatrixXd::Identity(p_,p_);
+    llt_.compute(ZtZ_);
     Zg_ = VectorXd::Zero(n_);
+    Zw_ = MatrixXd::Zero(n_,p_);
     wy2_ = VectorXd::Zero(n_);
     logY2_ = VectorXd::Zero(n_);
     score_ = VectorXd::Zero(p_);
+    gamma0_ = VectorXd::Zero(p_);
   }
 
-  /// The Fisher scoring algorithm LVLMFit::fit terminates when either a maximum number of iterations has been reached, or when the relative error reaches a specific bound.  Here, the relative error between step \f$m+1\f$ and step \f$m\f$ is defined as
+  /// The Fisher scoring algorithm LVLMFit::fitFS terminates when either a maximum number of iterations has been reached, or when the relative error reaches a specific bound.  Here, the relative error between step \f$m+1\f$ and step \f$m\f$ is defined as
   /// \f[
   /// \frac{|\ell(\boldsymbol{\gamma}_{m+1}) - \ell(\boldsymbol{\gamma}_{m})|}{0.1 + |\ell(\boldsymbol{\gamma}_{m+1})|},
   /// \f]
@@ -127,8 +145,9 @@ namespace hlm {
   /// Calculates `ZtZ_` when it is more efficient to reuse it for Fisher scoring with the same covariate matrix but multiple response vectors.
   ///
   /// @param[in] Z Covariate matrix of size `n x p`.
-  inline void LVLMFit::setZtZ(cRMatrixXd& Z) {
-    ZtZ_.compute(Z.adjoint() * Z);
+  inline void LVLMFit::set_ZtZ(cRMatrixXd& Z) {
+    ZtZ_ = Z.adjoint() * Z;
+    llt_.compute(ZtZ_);
     return;
   }
   
@@ -168,16 +187,13 @@ namespace hlm {
   /// @param[in] y2 Vector of `n` *squares* of normal responses: `y2 = y^2`.
   /// @param[in] Z Covariate matrix of size `n x p`.
   /// @param[in] gamma0 Parameter vector of length `p` to initialize the algorithm.
-  /// @param[in] calcZtZ If `false`, uses the Cholesky solver `ZtZ_` computed from a previous step, or from LVLMFit::setZtZ.
-  inline void LVLMFit::fit(RVectorXd gamma,
-			   cRVectorXd& y2, cRMatrixXd& Z,
-			   cRVectorXd& gamma0, bool calcZtZ) {
+  /// @param[in] calcZtZ If `false`, uses the Cholesky solver `ZtZ_` computed from a previous step, or from LVLMFit::set_ZtZ.
+  inline void LVLMFit::fitFS(RVectorXd gamma,
+			     cRVectorXd& y2, cRMatrixXd& Z,
+			     cRVectorXd& gamma0, bool calcZtZ) {
     double ll_new, ll_old;
-    if(calcZtZ) {
-      // precomputations
-      ZtZ_.compute(Z.adjoint() * Z);
-    }
-    gamma = gamma0;
+    if(calcZtZ) set_ZtZ(Z); // precomputations
+    set_gamma(gamma, gamma0);
     // Rprintf("epsilon_ = %f\n", epsilon_);
     for(niter_=0; niter_<maxit_; niter_++) {
       // elements of score function
@@ -198,7 +214,7 @@ namespace hlm {
       // finish score function & update gamma
       wy2_.array() -= 1.0; 
       score_ = (wy2_.asDiagonal() * Z).colwise().sum().adjoint();
-      ZtZ_.solveInPlace(score_);
+      llt_.solveInPlace(score_);
       gamma += score_;
     }
     if(niter_ == maxit_) {
@@ -212,25 +228,86 @@ namespace hlm {
     return;
   }
 
-  /// Same as the longer version of LVLMFit::fit, but initializes `gamma0` with the least-squares estimator LVLMFit::fitLS.
+  /// Same as the longer version of LVLMFit::fitFS, but initializes `gamma0` with the least-squares estimator LVLMFit::fitLS.
   ///
   /// @param[out] gamma MLE vector of length `p` as calculated by the Fisher scoring algorithm.
   /// @param[in] y2 Vector of `n` *squares* of normal responses: `y2 = y^2`.
   /// @param[in] Z Covariate matrix of size `n x p`.
-  /// @param[in] calcZtZ If `false`, uses the Cholesky solver `ZtZ_` computed from a previous step, or from LVLMFit::setZtZ.
-  inline void LVLMFit::fit(RVectorXd gamma,
-  			   cRVectorXd& y2, cRMatrixXd& Z, bool calcZtZ) {
-    if(calcZtZ) setZtZ(Z); // precomputations
+  /// @param[in] calcZtZ If `false`, uses the Cholesky solver `ZtZ_` computed from a previous step, or from LVLMFit::set_ZtZ.
+  inline void LVLMFit::fitFS(RVectorXd gamma,
+			     cRVectorXd& y2, cRMatrixXd& Z, bool calcZtZ) {
+    if(calcZtZ) set_ZtZ(Z); // precomputations
     logY2_ = y2.array().log();
-    fitLS(gamma, logY2_, Z, false);
+    fitLS(gamma0_, logY2_, Z, false);
     // std::cout << "fitLS(gamma) = \n" << gamma << std::endl;
-    fit(gamma, y2, Z, gamma, false);
+    fitFS(gamma, y2, Z, gamma0_, false);
+    // std::cout << "fit(gamma) = \n" << gamma << std::endl;
+    return;
+  }
+
+  /// @param[out] gamma MLE vector of length `p` as calculated by the IRLS algorithm.
+  /// @param[in] y2 Vector of `n` *squares* of normal responses: `y2 = y^2`.
+  /// @param[in] Z Covariate matrix of size `n x p`.
+  /// @param[in] gamma0 Parameter vector of length `p` to initialize the algorithm.
+  inline void LVLMFit::fitIRLS(RVectorXd gamma,
+			       cRVectorXd& y2, cRMatrixXd& Z,
+			       cRVectorXd& gamma0) {
+    double ll_new, ll_old;
+    set_gamma(gamma, gamma0);
+    logY2_ = y2.array().log();
+    for(niter_=0; niter_<maxit_; niter_++) {
+      // elements of weight vector
+      Zg_.noalias() = Z * gamma;
+      wy2_ = y2.array() / Zg_.array().exp(); // exp(eps)
+      // likelihood along the way
+      ll_new = loglik();
+      // compute and check relative error
+      error_ = (niter_ > 0) ? rel_err(ll_new, ll_old) : (epsilon_ + 1.0);
+      // Rprintf("ll[%i] = %f\n", niter, ll_new);
+      // Rprintf("error[%i] = %f\n", niter, error);
+      if(error_ < epsilon_) {
+	// Rprintf("tolerance reached.\n");
+	break;
+      } else {
+	ll_old = ll_new;
+      }
+      // finish weights vector & update gamma
+      wy2_.array() -= 1.0;
+      wy2_.array() /= (logY2_ - Zg_).array();
+      Zw_ = wy2_.asDiagonal() * Z;
+      // IRLS step
+      ZtZ_.noalias() = Zw_.adjoint() * Z;
+      llt_.compute(ZtZ_);
+      gamma.noalias() = Zw_.adjoint() * logY2_;
+      llt_.solveInPlace(gamma);
+    }
+    if(niter_ == maxit_) {
+      // final error calculation
+      ll_new = loglik(gamma, y2, Z);
+      error_ = rel_err(ll_new, ll_old);
+      // Rprintf("ll[%i] = %f\n", niter, ll_new);
+      // Rprintf("error[%i] = %f\n", niter, error);
+    }
+    llik_ = ll_new;
+    return;
+  }
+
+    /// Same as the longer version of LVLMFit::fitIRLS, but initializes `gamma0` with the least-squares estimator LVLMFit::fitLS.
+  ///
+  /// @param[out] gamma MLE vector of length `p` as calculated by the IRLS algorithm.
+  /// @param[in] y2 Vector of `n` *squares* of normal responses: `y2 = y^2`.
+  /// @param[in] Z Covariate matrix of size `n x p`.
+  inline void LVLMFit::fitIRLS(RVectorXd gamma,
+			       cRVectorXd& y2, cRMatrixXd& Z) {
+    logY2_ = y2.array().log();
+    fitLS(gamma0_, logY2_, Z);
+    // std::cout << "fitLS(gamma) = \n" << gamma << std::endl;
+    fitIRLS(gamma, y2, Z, gamma0_);
     // std::cout << "fit(gamma) = \n" << gamma << std::endl;
     return;
   }
 
   /// The least-squares parameter estimation method uses the fact that
-  ///
   /// \f[
   /// \log(y_i^2) = \boldsymbol{z}_i'\boldsymbol{\gamma} + \varepsilon_i, \qquad \exp(\varepsilon_i) \stackrel{\textrm{iid}}{\sim} \chi^2_{(1)}.
   /// \f]
@@ -239,16 +316,13 @@ namespace hlm {
   /// @param[out] gamma Fitted value of the LVLM parameters.
   /// @param[in] logY2 Vector of `n` log-square responses, `logY2 = log(y^2)`.
   /// @param[in] Z Covariate matrix of size `n x p`.
-  /// @param[in] calcZtZ If `false`, uses the Cholesky solver `ZtZ_` computed from a previous step, or from LVLMFit::setZtZ.
+  /// @param[in] calcZtZ If `false`, uses the Cholesky solver `ZtZ_` computed from a previous step, or from LVLMFit::set_ZtZ.
   inline void LVLMFit::fitLS(RVectorXd gamma, cRVectorXd& logY2,
 			     cRMatrixXd& Z, bool calcZtZ) {
-    if(calcZtZ) {
-      // precomputations
-      ZtZ_.compute(Z.adjoint() * Z);
-    }
+    if(calcZtZ) set_ZtZ(Z); // precomputations
     logY2_ = logY2.array() - RHO;
     gamma.noalias() = Z.adjoint() * logY2_;
-    ZtZ_.solveInPlace(gamma);
+    llt_.solveInPlace(gamma);
     return;
   }
   

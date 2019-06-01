@@ -9,15 +9,19 @@ lm_fit <- function(y, X) {
     .Call(`_hlm_lm_fit`, y, X)
 }
 
-lvlm_fit <- function(y2, Z, gamma0, maxit = 25L, epsilon = 1e-8, initLS = FALSE) {
-    .Call(`_hlm_lvlm_fit`, y2, Z, gamma0, maxit, epsilon, initLS)
+lvlm_fitFS <- function(y2, Z, gamma0, maxit = 25L, epsilon = 1e-8, initLS = FALSE) {
+    .Call(`_hlm_lvlm_fitFS`, y2, Z, gamma0, maxit, epsilon, initLS)
+}
+
+lvlm_fitIRLS <- function(y2, Z, gamma0, maxit = 25L, epsilon = 1e-8, initLS = FALSE) {
+    .Call(`_hlm_lvlm_fitIRLS`, y2, Z, gamma0, maxit, epsilon, initLS)
 }
 
 lvlm_fitLS <- function(logY2, Z) {
     .Call(`_hlm_lvlm_fitLS`, logY2, Z)
 }
 
-hlm_fit <- function(y, X, Z, beta0, gamma0, maxit = 1000L, epsilon = 1e-5) {
-    .Call(`_hlm_hlm_fit`, y, X, Z, beta0, gamma0, maxit, epsilon)
+hlm_fit <- function(y, X, Z, beta0, gamma0, maxit = 1000L, epsilon = 1e-5, method = 1L) {
+    .Call(`_hlm_hlm_fit`, y, X, Z, beta0, gamma0, maxit, epsilon, method)
 }
 

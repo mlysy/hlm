@@ -63,7 +63,7 @@ namespace hlm {
     /// Fit the MLE of the model parameters.
     void fit(RVectorXd beta, RVectorXd gamma,
 	     cRVectorXd& y, cRMatrixXd& X, cRMatrixXd& Z,
-	     cRVectorXd& beta0, cRVectorXd& gamma0);
+	     cRVectorXd& beta0, cRVectorXd& gamma0, int method);
     /// Loglikelihood function.
     double loglik(cRVectorXd& beta, cRVectorXd& gamma,
 		  cRVectorXd& y, cRMatrixXd& X, cRMatrixXd& Z);
@@ -149,41 +149,35 @@ namespace hlm {
   /// @param[in] Z Variance covariate matrix of size `n x q`.
   /// @param[in] beta0 Parameter vector of length `p` to initialize the algorithm.
   /// @param[in] gamma0 Parameter vector of length `q` to initialize the algorithm.
+  /// @param[in] method Integer determining the type of update for `gamma`.  0: FS, 1: IRLS.
   inline void HLMFit::fit(RVectorXd beta, RVectorXd gamma,
 			  cRVectorXd& y, cRMatrixXd& X, cRMatrixXd& Z,
-			  cRVectorXd& beta0, cRVectorXd& gamma0) {
+			  cRVectorXd& beta0, cRVectorXd& gamma0,
+			  int method) {
     double ll_new, ll_old;
     int tmp_niter;
     double tmp_error;
-    // precomputations
-    lvlm_->setZtZ(Z);
+    if(method == 0) lvlm_->set_ZtZ(Z); // precomputations
     // initialize
     beta = beta0;
     gamma = gamma0;
-    // std::cout << "beta0 = \n" << beta << std::endl;
-    // std::cout << "gamma0 = \n" << gamma << std::endl;
-    // Rprintf("maxit_ = %i\n", maxit_);
-    // Rprintf("epsilon_ = %f\n", epsilon_);
     ll_old = loglik(beta, gamma, y, X, Z);
     for(niter_=0; niter_<maxit_; niter_++) {
-      // Rprintf("niter_ = %i\n", niter_);
       // update beta
       w_.noalias() = -Z * gamma;
       w_ = w_.array().exp();
       lm_->fit(beta, y, X, w_);
-      // std::cout << "beta = \n" << beta << std::endl;
       // update gamma
       y2_.noalias() = y - X * beta;
       y2_.array() *= y2_.array();
-      // std::cout << "y2_ = \n" << y2_ << std::endl;
-      // Rprintf("all(y2_ > 0) = %i\n", (y2_.array() > 0).all());
-      lvlm_->fit(gamma, y2_, Z, false);
+      if(method == 0) {
+	lvlm_->fitFS(gamma, y2_, Z, false);
+      } else {
+	lvlm_->fitIRLS(gamma, y2_, Z);
+      }
       lvlm_->fitStats(ll_new, tmp_niter, tmp_error);
-      // std::cout << "gamma = \n" << gamma << std::endl;
       // check relative error
       error_ = rel_err(ll_new, ll_old);
-      // Rprintf("ll_old = %f, ll_new = %f\n", ll_old, ll_new);
-      // Rprintf("error_[%i] = %f\n", niter_, error_);
       if(error_ < epsilon_) {
 	break;
       } else {

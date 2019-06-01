@@ -37,11 +37,11 @@ Eigen::VectorXd lm_fit(Eigen::VectorXd y, Eigen::MatrixXd X) {
   return beta;
 }
 
-// [[Rcpp::export("lvlm_fit")]]
-Eigen::VectorXd lvlm_fit(Eigen::VectorXd y2, Eigen::MatrixXd Z,
-			 Eigen::VectorXd gamma0,
-			 int maxit = 25, double epsilon = 1e-8,
-			 bool initLS = false) {
+// [[Rcpp::export("lvlm_fitFS")]]
+Eigen::VectorXd lvlm_fitFS(Eigen::VectorXd y2, Eigen::MatrixXd Z,
+			   Eigen::VectorXd gamma0,
+			   int maxit = 25, double epsilon = 1e-8,
+			   bool initLS = false) {
   int n = Z.rows();
   int p = Z.cols();
   int niter;
@@ -51,12 +51,36 @@ Eigen::VectorXd lvlm_fit(Eigen::VectorXd y2, Eigen::MatrixXd Z,
   gamma = gamma0;
   hlm::LVLMFit lvlm(n, p);
   lvlm.fitControl(maxit, epsilon);
-  lvlm.setZtZ(Z);
+  lvlm.set_ZtZ(Z);
   Eigen::internal::set_is_malloc_allowed(false);
   if(initLS) {
-    lvlm.fit(gamma, y2, Z, false);
+    lvlm.fitFS(gamma, y2, Z, false);
   } else {
-    lvlm.fit(gamma, y2, Z, gamma, false);
+    lvlm.fitFS(gamma, y2, Z, gamma, false);
+  }
+  Eigen::internal::set_is_malloc_allowed(true);	
+  return gamma;
+}
+
+// [[Rcpp::export("lvlm_fitIRLS")]]
+Eigen::VectorXd lvlm_fitIRLS(Eigen::VectorXd y2, Eigen::MatrixXd Z,
+			     Eigen::VectorXd gamma0,
+			     int maxit = 25, double epsilon = 1e-8,
+			     bool initLS = false) {
+  int n = Z.rows();
+  int p = Z.cols();
+  int niter;
+  double error;
+  double llik;
+  Eigen::VectorXd gamma(p);
+  hlm::LVLMFit lvlm(n, p);
+  lvlm.fitControl(maxit, epsilon);
+  lvlm.set_ZtZ(Z);
+  Eigen::internal::set_is_malloc_allowed(false);
+  if(initLS) {
+    lvlm.fitIRLS(gamma, y2, Z);
+  } else {
+    lvlm.fitIRLS(gamma, y2, Z, gamma0);
   }
   Eigen::internal::set_is_malloc_allowed(true);	
   return gamma;
@@ -68,7 +92,7 @@ Eigen::VectorXd lvlm_fitLS(Eigen::VectorXd logY2, Eigen::MatrixXd Z) {
   int p = Z.cols();
   Eigen::VectorXd gamma(p);
   hlm::LVLMFit lvlm(n, p);
-  lvlm.setZtZ(Z);
+  lvlm.set_ZtZ(Z);
   Eigen::internal::set_is_malloc_allowed(false);
   lvlm.fitLS(gamma, logY2, Z, false);
   Eigen::internal::set_is_malloc_allowed(true);    
@@ -79,7 +103,8 @@ Eigen::VectorXd lvlm_fitLS(Eigen::VectorXd logY2, Eigen::MatrixXd Z) {
 Rcpp::List hlm_fit(Eigen::VectorXd y,
 		   Eigen::MatrixXd X, Eigen::MatrixXd Z,
 		   Eigen::VectorXd beta0, Eigen::VectorXd gamma0,
-		   int maxit = 1000, double epsilon = 1e-5) {
+		   int maxit = 1000, double epsilon = 1e-5,
+		   int method = 1) {
   int n = X.rows();
   int p = X.cols();
   int q = Z.cols();
@@ -90,7 +115,7 @@ Rcpp::List hlm_fit(Eigen::VectorXd y,
   Eigen::VectorXd gamma(q);
   hlm::HLMFit hlm(n, p, q);
   hlm.fitControl(maxit, epsilon);
-  hlm.fit(beta, gamma, y, X, Z, beta0, gamma0);
+  hlm.fit(beta, gamma, y, X, Z, beta0, gamma0, method);
   hlm.fitStats(llik, niter, error);
   return List::create(_["beta"] = beta,
 		      _["gamma"] = gamma,

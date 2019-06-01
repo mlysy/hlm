@@ -34,6 +34,7 @@ chlm_loglik <- function(beta, gamma, y, delta, X, Z) {
 #' @param maxit Maximum number of iteration of the fitting algorithm (see \strong{Details}).
 #' @param epsilon Tolerance threshold for termination of the algorithm (see \strong{Details}).
 #' @param splitE If \code{TRUE}, perform the E-step after each conditional M-step (see \strong{Details}).
+#' @param method The updating method for gamma.  Choices are \code{Fisher} for Fisher Scoring and \code{IRLS} for Iteratively Reweighted Least Squares (the default; somewhat slower but more stable).
 #'
 #' @return An object of class \code{hlm} with the following elements:
 #' \describe{
@@ -59,7 +60,10 @@ chlm_loglik <- function(beta, gamma, y, delta, X, Z) {
 #' }
 #' @export
 chlm_fit <- function(y, delta, X, Z,
-                     maxit = 1000, epsilon = 1e-8, splitE = FALSE) {
+                     maxit = 1000, epsilon = 1e-8,
+                     splitE = FALSE, method = c("IRLS", "Fisher")) {
+  method <- match.arg(method)
+  method <- c(Fisher = 0, IRLS = 1)[method]
   # helper functions
   # loglikelihood
   loglik <- function(beta, gamma) {
@@ -99,7 +103,14 @@ chlm_fit <- function(y, delta, X, Z,
   }
   .lvlm_fit <- function(y2, Z, gamma0) {
     if(missing(gamma0)) gamma0 <- lvlm_fitLS(logY2 = log(y2), Z = Z)
-    lvlm_fit(y2 = y2, Z = Z, gamma0 = gamma0)
+    if(method == 0) {
+      # Fisher Scoring
+      lvlm_fitFS(y2 = y2, Z = Z, gamma0 = gamma0)
+    } else if(method == 1) {
+      # IRLS
+      lvlm_fitIRLS(y2 = y2, Z = Z, gamma0 = gamma0)
+    }
+    ## coef(glm.fit(y = y2, x = Z))
   }
   # initialize the algorithm
   beta <- .lm_fit(y = y, X = X)
@@ -107,8 +118,8 @@ chlm_fit <- function(y, delta, X, Z,
   if(missing(delta) || all(delta)) {
     # no censoring
     out <- hlm_fit(y = y, X = X, Z = Z,
-                   beta0 = beta, gamma0 = gamma0,
-                   maxit = maxit, epsilon = epsilon)
+                   beta0 = beta, gamma0 = gamma,
+                   maxit = maxit, epsilon = epsilon, method = method)
     class(out) <- "hlm"
     return(out)
 

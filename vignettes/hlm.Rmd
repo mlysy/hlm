@@ -1,10 +1,12 @@
 ---
-title: "Fitting the Heteroscedastic Model"
-author: "Martin Lysy"
+title: "The Heteroscedastic Linear Model"
+author: "Martin Lysy, Tian You, Yifan Wang"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    toc: true
 vignette: >
-  %\VignetteIndexEntry{Fitting the Heteroscedastic Model}
+  %\VignetteIndexEntry{The Heteroscedastic Linear Model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -12,40 +14,121 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "##"
 )
+# link to packages
+pkg_link <- function(pkg, link) {
+  if(link == "github") {
+    link <- paste0("https://github.com/mlysy/", pkg)
+  } else if(link == "cran") {
+    link <- paste0("https://CRAN.R-project.org/package=", pkg)
+  }
+  paste0("[**", pkg, "**](", link, ")")
+}
+cran_link <- function(pkg) pkg_link(pkg, "cran")
+github_link <- function(pkg) pkg_link(pkg, "github")
 ```
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
 
 \newcommand{\bm}[1]{\boldsymbol{#1}}
 \newcommand{\tx}[1]{\textrm{#1}}
 \newcommand{\ind}{\stackrel{\textrm{ind}}{\sim}}
 \newcommand{\iid}{\stackrel{\textrm{iid}}{\sim}}
 \newcommand{\N}{\mathcal N}
+\newcommand{\aa}{{\bm a}}
 \newcommand{\rr}{{\bm r}}
 \newcommand{\zz}{{\bm z}}
+\newcommand{\xx}{{\bm x}}
+\newcommand{\ww}{{\bm w}}
+\newcommand{\XX}{{\bm X}}
 \newcommand{\ZZ}{{\bm Z}}
 \newcommand{\WW}{{\bm W}}
 \newcommand{\yy}{{\bm y}}
-\newcommand{\ww}{{\bm w}}
 \newcommand{\gg}{{\bm g}}
 \newcommand{\HH}{{\bm H}}
+\newcommand{\bbe}{{\bm \beta}}
 \newcommand{\gga}{{\bm \gamma}}
+\newcommand{\dde}{{\bm \delta}}
 \newcommand{\FI}{\bm{\mathcal I}}
 \newcommand{\veps}{\varepsilon}
 \newcommand{\diag}{\operatorname{diag}}
+\newcommand{\rv}[3][1]{#2_{#1},\ldots,#2_{#3}}
+\newcommand{\DD}{\bm{\mathcal D}}
+\newcommand{\So}{\mathcal S_\delta}
+\newcommand{\Sc}{\mathcal S_\delta^c}
+\newcommand{\sp}[1]{^{(#1)}}
 
+## The HLM Model
 
-## Setup
+The Heteroscedastic Linear Model (HLM) is of the form
+\begin{equation}
+\label{eq:hlm}
+y_i \mid \xx_i, \zz_i \ind \mathcal N\big(\xx_i'\bbe, \exp(\zz_i'\gga)\big),
+\end{equation}
+where $y_i$ is the response for observation $i$, $\xx_i \in \mathbb R^p$ and $\zz_i \in \mathbb R^q$ are the mean and variance covariates, respectively.  Inference is over the unknown parameters $\bbe$ and $\gga$.
 
-The simplified heteroscedastic model is of the form
+### Inference with the **hlm** Package
+
+The **hlm** package provides a simple interface to estimate the parameters of model \\eqref{eq:hlm}.
+
+```{r}
+require(hlm)
+args(hlm::chlm_fit)
+```
+
+## Parameter Estimation
+
+Let $\DD = (\yy, \XX, \ZZ)$ denote the observed data, where $\yy = (\rv y n)$, $\XX = (\rv \xx, n)$, and $\ZZ = (\rv \zz n)$, such that the loglikelihood function is
 $$
-y_i \ind \N\big(0, \exp(\zz_i'\gga)\big), \qquad i = 1,\ldots,n.
+\ell(\bbe, \gga \mid \DD) = - \frac 1 2 \sum_{i=1}^n \frac{(y_i - \xx_i'\bbe)^2}{\exp(\zz_i'\gga)} + \zz_i'\gga.
 $$
-The loglikelihood is given by
+Then a relatively stable and straightforward algorithm for maximizing \\eqref{eq:hlm} is blockwise coordinate ascent, alternating between updates of $\bbe$ and $\gga$.  That is, for fixed $\gga$ the conditional likelihood corresponds to
 $$
-\ell(\gga ) = -\frac 1 2 \sum_{i=1}^n \left[\frac{ y_i^2}{\exp(\zz_i'\gga)} + \zz_i'\gga\right].
+y_i \ind \N\big(\xx_i'\bbe, 1/w_i\big),
 $$
-Its gradient and Hessian are given by
+where $w_i = \exp(-\zz_i'\gga)$.  The conditional maximum likelihood estimate $\hat \bbe(\gga)$ is recognized as the weighted least-squares solution,
+$$
+\hat \bbe(\gga) = (\XX'\diag(\ww)\ \XX)^{-1}\XX'\diag(\ww) \ \yy,
+$$
+where $\ww = (\rv w n)$.  Similarly, fo fixed $\bbe$ the conditional likelihood corresponds to
+\begin{equation}\label{eq:llvm}
+\tilde y_i \ind \N\big(0, \exp(\zz_i'\gga)\big),
+\end{equation}
+where $\tilde y_i = y_i - \xx_i'\bbe$.  We shall refer to \\eqref{eq:llvm} as a Log-Linear Variance Model (LLVM) and present two algorithms for estimating its parameters in the [following section](#sec:llvm).
+
+### Right-Censored Observations
+
+Let $\delta_i = 1$ express the fact that the response $y_i$ for observation $i$ is fully observed, and $\delta_i = 0$ indicate that it has been right-censored.  Assuming that the censoring mechanism and the response are conditionally independent given the covariates, the loglikelihood for the data $\DD = (\yy, \dde, \XX, \ZZ)$ is given by
+\begin{equation}\label{eq:chlm}
+\ell(\bbe, \gga \mid \DD) = - \frac 1 2 \sum_{i \in \So} \left\{\frac{(y_i - \xx_i'\bbe)^2}{\exp(\zz_i'\gga)} + \zz_i'\gga \right\} + \sum_{i \in \Sc} \log\left\{1 - \Phi\left(\frac{y_i - \xx_i'\bbe}{\exp(\tfrac 1 2 \zz_i'\gga)}\right)\right\},
+\end{equation}
+where $\So = \{i: \delta_i = 1\}$ and $\Sc = \{i: \delta_i = 0\}$ are the sets of uncensored and censored observations, respectively, and $\Phi(\cdot)$ is the CDF of the standard normal $\N(0, 1)$ distribution.  
+<!-- That is, the $w_i$ are taken to be case weights, as in the **R** package `r cran_link("survival")`.   -->
+Finding the MLE of $(\bbe, \gga)$ in \\eqref{eq:chlm} can be done with an Expectation-Conditional-Maximization (ECM) algorithm.  That is, if $(\bbe\sp t, \gga\sp t)$ denotes the value of the parameters at step $t$, the E-step function is given by
+$$
+\begin{aligned}
+Q_t(\bbe, \gga) & = E\left[-\frac 1 2 \sum_{i=1}^n \frac{(y_i - \xx_i'\bbe)^2}{\exp(\zz_i'\gga)} + \zz_i'\gga \mid \DD, \bbe\sp t, \gga \sp t\right] \\
+& = - \frac 1 2 \sum_{i=1}^n \frac{s_i\sp t - 2 r_i\sp t \xx_i'\bbe + (\xx_i'\bbe)^2}{\exp(\zz_i'\gga)} + \zz_i'\gga,
+\end{aligned}
+$$
+where...
+
+## The Log-Linear Variance Model {#sec:llvm}
+
+Dropping the "tilde" to simplify notation, the LLVM model \\eqref{eq:llvm} is written as
+$$
+y_i \ind \N\big(0, \exp(\zz_i'\gga)\big).
+$$
+Its loglikelihood is given by
+$$
+\ell(\gga ) = -\frac 1 2 \sum_{i=1}^n \left[\frac{ y_i^2}{\exp(\zz_i'\gga)} + \zz_i'\gga\right],
+$$
+and the score function and Hessian are given by
 $$
 \begin{aligned}
 \gg(\gga) & = \frac{\partial \ell(\gga )}{\partial \gga}  = \frac 1 2 \sum_{i=1}^n \left[\frac{y_i^2}{\exp(\zz_i'\gga)} - 1\right]\zz_i \\
@@ -53,15 +136,13 @@ $$
 \end{aligned}
 $$
 
-## Parameter Estimation
-
-### Fisher Scoring
+### Fisher Scoring Algorithm
 
 The expected Fisher information is
 $$
 \FI(\gga) = -E[\HH(\gga)] = \frac 1 2 \sum_{i=1}^n \frac{E[y_i^2] \zz_i\zz_i'}{\exp(\zz_i'\gga)} = \tfrac 1 2 \ZZ'\ZZ.
 $$
-Therefore, the [Fisher scoring](https://en.wikipedia.org/wiki/Scoring_algorithm) algorithm is
+Therefore, the [Fisher scoring](https://en.wikipedia.org/wiki/Scoring_algorithm) algorithm to obtain the MLE of $\gga$ is
 $$
 \gga_{m+1} = \gga_m + \FI(\gga_m)^{-1} \gg(\gga_m).
 $$
@@ -77,18 +158,18 @@ where $\psi(x)$ is the [digamma function](https://en.wikipedia.org/wiki/Digamma_
 $$
 \gga_0 = (\ZZ'\ZZ)^{-1}\ZZ'(\rr - \rho).
 $$
-Following the `stats::glm.fit()` function in R, the stopping criterion for the algorithm is either when more than $M_{\tx{max}}$ steps have been taken, or when
+Following the `stats::glm.fit()` function in **R**, the stopping criterion for the algorithm is either when more than $M_{\tx{max}}$ steps have been taken, or when
 $$
 \frac{|\ell(\gga_{m} ) - \ell(\gga_{m-1} )|}{0.1 + |\ell(\gga_m )|} < \epsilon.
 $$
 
-### Iteratively Reweighted Least Squares
+### Iteratively Reweighted Least Squares Algorithm
 
 A different estimation algorithm is obtained by noting that the score function may be written as
 $$
 \gg(\gga) = \frac 1 2 \sum_{i=1}^n w_i \cdot (r_i - \zz_i'\gga), \qquad w_i = \frac{\exp(r_i - \zz_i'\gga) - 1}{r_i - \zz_i'\gga}.
 $$
-Thus we have $\gg(\gga) = \tfrac 1 2 \WW(\rr - \ZZ\gga)$ where $\WW = \diag(w_1, \ldots, w_n)$.  Setting the score function to zero produces the [iteratively reweighted least squares](https://en.wikipedia.org/wiki/Iteratively_reweighted_least_squares) algorithm
+Thus we have $\gg(\gga) = \tfrac 1 2 \WW(\rr - \ZZ\gga)$ where $\WW = \diag(w_1, \ldots, w_n)$.  Setting the score function to zero produces the [iteratively reweighted least squares](https://en.wikipedia.org/wiki/Iteratively_reweighted_least_squares) (IRLS) algorithm
 $$
 \gga_{m+1} = (\ZZ'\WW_m \ZZ)^{-1}\ZZ'\WW_m \rr, \qquad \WW_m = \WW(\gga_m).
 $$

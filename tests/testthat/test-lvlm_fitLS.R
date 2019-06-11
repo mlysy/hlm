@@ -14,7 +14,7 @@ test_that("lvlm_fitLS is same in C++ and R", {
     y <- rnorm(n, sd = sigma)
     wy2 <- w*y^2
     gamma_r <- qr.solve(Z, log(wy2) - (digamma(1/2) + log(2)))
-    gamma_cpp <- hlm:::lvlm_fitLS(logY2 = log(wy2), Z = Z)
+    gamma_cpp <- lvlm_fit(y2 = wy2, Z = Z, method = "LS")
     expect_equal(gamma_r, gamma_cpp)
   }
 })

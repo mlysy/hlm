@@ -87,7 +87,10 @@ hlm_loglik <- function(beta, gamma, y, X, Z) {
 }
 
 hlm_fit_R <- function(y, X, Z, beta0, gamma0,
-                     maxit = 25, epsilon = 1e-8, method = 1) {
+                      maxit = 25, epsilon = 1e-8,
+                      method = c("IRLS", "Fisher")) {
+  method <- match.arg(method)
+  method <- switch(method, Fisher = 0, IRLS = 1)
   C <- length(y)/2 * log(2*pi)
   loglik <- function(beta, gamma) {
     hlm_loglik(beta = beta, gamma = gamma, y = y, X = X, Z = Z) + C

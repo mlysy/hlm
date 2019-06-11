@@ -1,21 +1,24 @@
 /// @file LVLMFit.h
 ///
-/// **TODO:**
+/// @todo
 ///
-/// - HLMFit::fit should return loglikelihood as well.
+/// - [x] HLMFit::fit should return loglikelihood as well.
 ///
-/// - HLMFit::fit should be overloaded such that precomputed `ZtZ_` can be supplied.  In fact, should perhaps restructure io arguments:
+/// - [x] HLMFit::fit should be overloaded such that precomputed `ZtZ_` can be supplied.  In fact, should perhaps restructure io arguments:
 ///
 ///     - `niter` and `error` (and even `llik`) can be returned separately via e.g. `fitStats`.
 ///     - boolean argument `calcZtZ` combined with `set_ZtZ` method.
 ///
-/// - check aliasing!  In fact, am I understanding "temporaries" correctly, i.e., is is more/less efficient to preallocate memory for temporary storage?
+/// - [x] check aliasing!  In fact, am I understanding "temporaries" correctly, i.e., is is more/less efficient to preallocate memory for temporary storage?
 ///
 ///    Answer: I think more efficient, because otherwise how would the compiler know the size of the temporary beforehand?  Can it really figure this out at compile-time? Btw, see `Eigen::internal::set_is_malloc_allowed` and discussion [here](https://forum.kde.org/viewtopic.php?f=74&t=124882).
 ///
 ///    OK, thanks to `set_is_malloc_allowed` this is now done.
 ///
-/// - stop putting all output arguments at the beginning of the function.
+/// - [ ] stop putting all output arguments at the beginning of the function.  no longer relevant now that things have been refactored.
+///
+/// - [ ] change name to VLLM (variance log-linear model)? Answer: no.
+
 
 #ifndef HLM_LVLMFIT_H
 #define HLM_LVLMFIT_H 1
@@ -31,7 +34,7 @@ namespace hlm {
 
   /// Log-Variance Linear Models.
   ///
-  /// The log-variance linear model (LVLM) is of the form
+  /// The log-variance linear model (LVLM) is defined as
   ///
   /// \f[
   /// y_i \stackrel{\textrm{ind}}{\sim} \mathcal{N}\big(0, \exp(\boldsymbol{z}_i'\boldsymbol{\gamma})\big).
@@ -100,7 +103,7 @@ namespace hlm {
     /// Fit the MLE of an LVLM by Iteratively Reweighted Least-Squares algorithm.
     void fitIRLS(RVectorXd gamma,
 		 cRVectorXd& y2, cRMatrixXd& Z);
-    /// Least-Squares estimate of the parameter vector.
+    /// Least-Squares estimate of the LVLM parameter vector.
     void fitLS(RVectorXd gamma, cRVectorXd& logY2, cRMatrixXd& Z,
 	       bool calcZtZ = true);
   };

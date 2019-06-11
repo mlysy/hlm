@@ -21,15 +21,16 @@ test_that("lvlm_fitFS is same in C++ and R", {
       if(initLS) {
         hfit <- lvlm_fitFS_R(y2 = wy2, Z = Z,
                              maxit = maxit, epsilon = epsilon)
+        gamma_cpp <- lvlm_fit(y2 = wy2, Z = Z, method = "Fisher",
+                              maxit = maxit, epsilon = epsilon)
       } else {
         hfit <- lvlm_fitFS_R(y2 = wy2, Z = Z, gamma0 = gamma0,
                              maxit = maxit, epsilon = epsilon)
+        gamma_cpp <- lvlm_fit(y2 = wy2, Z = Z, method = "Fisher",
+                              gamma0 = gamma0, maxit = maxit, epsilon = epsilon)
       }
     })
     gamma_r <- coef(hfit)
-    gamma_cpp <- hlm:::lvlm_fitFS(y2 = wy2, Z = Z, gamma0 = gamma0,
-                                  maxit = maxit, epsilon = epsilon,
-                                  initLS = initLS)
     expect_equal(gamma_r, gamma_cpp)
   }
 })
@@ -80,15 +81,16 @@ test_that("lvlm_fitIRLS is same in C++ and R", {
       if(initLS) {
         hfit <- lvlm_fitIRLS_R(y2 = wy2, Z = Z,
                                maxit = maxit, epsilon = epsilon)
+        gamma_cpp <- lvlm_fit(y2 = wy2, Z = Z, method = "IRLS",
+                              maxit = maxit, epsilon = epsilon)
       } else {
         hfit <- lvlm_fitIRLS_R(y2 = wy2, Z = Z, gamma0 = gamma0,
                                maxit = maxit, epsilon = epsilon)
+        gamma_cpp <- lvlm_fit(y2 = wy2, Z = Z, method = "IRLS",
+                              gamma0 = gamma0, maxit = maxit, epsilon = epsilon)
       }
     })
     gamma_r <- coef(hfit)
-    gamma_cpp <- hlm:::lvlm_fitIRLS(y2 = wy2, Z = Z, gamma0 = gamma0,
-                                    maxit = maxit, epsilon = epsilon,
-                                    initLS = initLS)
     expect_equal(gamma_r, gamma_cpp)
   }
 })

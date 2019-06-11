@@ -12,7 +12,7 @@ test_that("wlm_fit is same in C++ and R", {
     beta <- sim_beta(p)
     y <- rnorm(n, mean = X %*% beta, sd = 1/sqrt(w))
     beta_r <- c(solve(crossprod(X, X*w), crossprod(X, y*w)))
-    beta_cpp <- hlm:::wlm_fit(y = y, X = X, w = w)
+    beta_cpp <- lm_fit(y = y, X = X, w = w)
     expect_equal(beta_r, beta_cpp)
   }
 })
@@ -28,7 +28,7 @@ test_that("lm_fit is same in C++ and R", {
     beta <- sim_beta(p)
     y <- rnorm(n, mean = X %*% beta, sd = rexp(1))
     beta_r <- c(solve(crossprod(X, X), crossprod(X, y)))
-    beta_cpp <- hlm:::lm_fit(y = y, X = X)
+    beta_cpp <- lm_fit(y = y, X = X)
     expect_equal(beta_r, beta_cpp)
   }
 })

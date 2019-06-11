@@ -1,31 +1,4 @@
-#' Loglikelihood of the HLM model.
-#'
-#' @template param-beta
-#' @template param-gamma
-#' @template param-y
-#' @template param-delta
-#' @template param-X
-#' @template param-Z
-#'
-#' @return The loglikelihood evaluated at the parameters values (a scalar).
-#' @export
-chlm_loglik <- function(beta, gamma, y, delta, X, Z) {
-  n <- length(y)
-  if(missing(delta)) delta <- rep(TRUE, n)
-  mu <- c(X %*% beta)
-  sig <- exp(.5 * c(Z %*% gamma))
-  ll <- rep(NA, length(y))
-  if(any(delta)) {
-    ll[delta] <- dnorm(y[delta], mu[delta], sig[delta], log = TRUE)
-  }
-  if(any(!delta)) {
-    ll[!delta] <- pnorm(y[!delta], mu[!delta], sig[!delta],
-                         lower.tail = FALSE, log.p = TRUE)
-  }
-  sum(ll)
-}
-
-#' Estimate the parameters of the HLM model.
+#' Low-level fitting functions for the HLM model.
 #'
 #' @template param-y
 #' @template param-delta
@@ -34,7 +7,7 @@ chlm_loglik <- function(beta, gamma, y, delta, X, Z) {
 #' @param maxit Maximum number of iteration of the fitting algorithm (see \strong{Details}).
 #' @param epsilon Tolerance threshold for termination of the algorithm (see \strong{Details}).
 #' @param splitE If \code{TRUE}, perform the E-step after each conditional M-step (see \strong{Details}).
-#' @param method The updating method for gamma.  Choices are \code{Fisher} for Fisher Scoring and \code{IRLS} for Iteratively Reweighted Least Squares (the default; somewhat slower but more stable).
+#' @param nIRLS Number of IRLS steps
 #'
 #' @return An object of class \code{hlm} with the following elements:
 #' \describe{
@@ -61,17 +34,13 @@ chlm_loglik <- function(beta, gamma, y, delta, X, Z) {
 #' @export
 chlm_fit <- function(y, delta, X, Z,
                      maxit = 1000, epsilon = 1e-8,
-                     splitE = FALSE, method = c("IRLS", "Fisher")) {
+                     splitE = FALSE, nIRLS = 5) {
   method <- match.arg(method)
   method <- c(Fisher = 0, IRLS = 1)[method]
   # helper functions
   # loglikelihood
   loglik <- function(beta, gamma) {
     chlm_loglik(beta, gamma, y, delta, X, Z)
-  }
-  # relative error
-  relerr <- function(x_new, x_old) {
-    abs(x_new - x_old)/(.1 + abs(x_new))
   }
   # truncated expectation of standard normal: E[Z|Z>a]
   etnorm <- function(a) {
@@ -110,11 +79,10 @@ chlm_fit <- function(y, delta, X, Z,
       # IRLS
       lvlm_fitIRLS(y2 = y2, Z = Z, gamma0 = gamma0)
     }
-    ## coef(glm.fit(y = y2, x = Z))
   }
   # initialize the algorithm
   beta <- .lm_fit(y = y, X = X)
-  gamma <- .lvlm_fit(y2 = c(y-X%*%beta)^2, Z = Z)
+  gamma <- .lvlm_fit(y2 = c(y - X %*% beta)^2, Z = Z)
   if(missing(delta) || all(delta)) {
     # no censoring
     out <- hlm_fit(y = y, X = X, Z = Z,
@@ -122,7 +90,6 @@ chlm_fit <- function(y, delta, X, Z,
                    maxit = maxit, epsilon = epsilon, method = method)
     class(out) <- "hlm"
     return(out)
-
   }
   Xc <- X[!delta,,drop=FALSE]
   yc <- y[!delta]
@@ -148,11 +115,18 @@ chlm_fit <- function(y, delta, X, Z,
     gamma <- .lvlm_fit(y2 = U, Z = Z)
     ll_new <- loglik(beta, gamma)
     ## if(is.na(ll_new)) browser()
-    tol <- relerr(ll_new, ll_old)
+    tol <- rel_err(ll_new, ll_old)
     if(tol < epsilon) break else ll_old <- ll_new
   }
   out <- list(beta = setNames(beta, NULL), gamma = setNames(gamma, NULL),
               loglik = ll_new, niter = ii, error = tol)
   class(out) <- "hlm"
   out
+}
+
+#--- helper functions ----------------------------------------------------------
+
+# relative error function used by stats::glm.fit
+rel_err <- function(x_new, x_old) {
+  abs(x_new - x_old)/(.1 + abs(x_new))
 }

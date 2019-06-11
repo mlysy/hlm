@@ -2,10 +2,10 @@
 % Please edit documentation in R/chlm_fit.R
 \name{chlm_fit}
 \alias{chlm_fit}
-\title{Estimate the parameters of the HLM model.}
+\title{Low-level fitting functions for the HLM model.}
 \usage{
 chlm_fit(y, delta, X, Z, maxit = 1000, epsilon = 1e-08,
-  splitE = FALSE)
+  splitE = FALSE, nIRLS = 5)
 }
 \arguments{
 \item{y}{Vector of observations of length \code{n}.}
@@ -21,6 +21,8 @@ chlm_fit(y, delta, X, Z, maxit = 1000, epsilon = 1e-08,
 \item{epsilon}{Tolerance threshold for termination of the algorithm (see \strong{Details}).}
 
 \item{splitE}{If \code{TRUE}, perform the E-step after each conditional M-step (see \strong{Details}).}
+
+\item{nIRLS}{Number of IRLS steps}
 }
 \value{
 An object of class \code{hlm} with the following elements:
@@ -33,7 +35,7 @@ An object of class \code{hlm} with the following elements:
 }
 }
 \description{
-Estimate the parameters of the HLM model.
+Low-level fitting functions for the HLM model.
 }
 \details{
 The fitting algorithm is an Expectation-Conditional-Maximization (ECM) algorithm extending the alternating weighted-LM/GLM updates of \code{beta} and \code{gamma}, proposed by Smyth??? for the uncensored setting.  The ECM algorithm terminates when either \code{maxit} iterations have been reached, or when

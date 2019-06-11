@@ -6,6 +6,18 @@
 
 using namespace Rcpp;
 
+// lm_fit
+Eigen::VectorXd lm_fit(Eigen::VectorXd y, Eigen::MatrixXd X);
+RcppExport SEXP _hlm_lm_fit(SEXP ySEXP, SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(lm_fit(y, X));
+    return rcpp_result_gen;
+END_RCPP
+}
 // wlm_fit
 Eigen::VectorXd wlm_fit(Eigen::VectorXd y, Eigen::MatrixXd X, Eigen::VectorXd w);
 RcppExport SEXP _hlm_wlm_fit(SEXP ySEXP, SEXP XSEXP, SEXP wSEXP) {
@@ -16,18 +28,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type w(wSEXP);
     rcpp_result_gen = Rcpp::wrap(wlm_fit(y, X, w));
-    return rcpp_result_gen;
-END_RCPP
-}
-// lm_fit
-Eigen::VectorXd lm_fit(Eigen::VectorXd y, Eigen::MatrixXd X);
-RcppExport SEXP _hlm_lm_fit(SEXP ySEXP, SEXP XSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type y(ySEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
-    rcpp_result_gen = Rcpp::wrap(lm_fit(y, X));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -95,8 +95,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_hlm_wlm_fit", (DL_FUNC) &_hlm_wlm_fit, 3},
     {"_hlm_lm_fit", (DL_FUNC) &_hlm_lm_fit, 2},
+    {"_hlm_wlm_fit", (DL_FUNC) &_hlm_wlm_fit, 3},
     {"_hlm_lvlm_fitFS", (DL_FUNC) &_hlm_lvlm_fitFS, 6},
     {"_hlm_lvlm_fitIRLS", (DL_FUNC) &_hlm_lvlm_fitIRLS, 6},
     {"_hlm_lvlm_fitLS", (DL_FUNC) &_hlm_lvlm_fitLS, 2},

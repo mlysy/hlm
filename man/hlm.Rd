@@ -4,8 +4,8 @@
 \alias{hlm}
 \title{Fit the heteroscedastic linear model.}
 \usage{
-hlm(formula, data, subset, weights, na.action, control, y, x, model,
-  offset)
+hlm(formula, data, subset, weights, na.action, control, model = TRUE,
+  qr = TRUE, x = FALSE, y = FALSE, offset)
 }
 \arguments{
 \item{formula}{An object of class \code{formula} (or one that can be coerced to that class).  See \strong{Details}.}
@@ -20,9 +20,9 @@ hlm(formula, data, subset, weights, na.action, control, y, x, model,
 
 \item{control}{List of parameters to control the fitting process.  See \strong{Details}.}
 
-\item{y, x, model}{Logical values indicating which data elements should be returned in the output.  These correspond to the response, the covariance matrices, and the \code{model.frame}, respectively.  See \code{stats::lm}.}
+\item{model, x, y, qr}{Logical values indicating which data elements should be returned in the output.  These correspond to the response, the covariance matrices, the \code{model.frame}, and the QR decomposition of the hessian of the negative loglikelihood, respectively.  See \code{stats::lm}.}
 
-\item{offset}{Currently ignored, as are \code{offset} terms in formula.}
+\item{offset}{Currently ignored, as are \code{offset} terms in the formula.}
 }
 \value{
 An object of class \code{hlm} with the following elements:
@@ -37,7 +37,7 @@ An object of class \code{hlm} with the following elements:
   \item{\code{x}}{If requested, a list with elements \code{X} and \code{Z} giving the mean and variance model matrices uses.}
   \item{\code{model}}{If requested, the \code{model.frame} used.}
   \item{\code{na.action}}{(Where relevant) information returned by \code{model.frame} on the special handling of \code{NA}s.}
-  \item{\code{qr}}{The QR decomposition of the observed Fisher information matrix of size \code{(p+q) x (p+q)}.}
+  \item{\code{qr}}{If requested, the QR decomposition of the observed Fisher information matrix of size \code{(p+q) x (p+q)}.}
 }
 }
 \description{

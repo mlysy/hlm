@@ -6,8 +6,8 @@
 #' @param weights Currently ignored.
 #' @param na.action A function which indicates what should happen when the data contain \code{NA}s.  Same default behavior as in \code{stats::lm}.
 #' @param control List of parameters to control the fitting process.  See \strong{Details}.
-#' @param y,x,model Logical values indicating which data elements should be returned in the output.  These correspond to the response, the covariance matrices, and the \code{model.frame}, respectively.  See \code{stats::lm}.
-#' @param offset Currently ignored, as are \code{offset} terms in formula.
+#' @param model,x,y,qr Logical values indicating which data elements should be returned in the output.  These correspond to the response, the covariance matrices, the \code{model.frame}, and the QR decomposition of the hessian of the negative loglikelihood, respectively.  See \code{stats::lm}.
+#' @param offset Currently ignored, as are \code{offset} terms in the formula.
 #'
 #' @details The heteroscedastic linear model (HLM) is of the form
 #' \deqn{
@@ -39,12 +39,13 @@
 #'   \item{\code{x}}{If requested, a list with elements \code{X} and \code{Z} giving the mean and variance model matrices uses.}
 #'   \item{\code{model}}{If requested, the \code{model.frame} used.}
 #'   \item{\code{na.action}}{(Where relevant) information returned by \code{model.frame} on the special handling of \code{NA}s.}
-#'   \item{\code{qr}}{The QR decomposition of the observed Fisher information matrix of size \code{(p+q) x (p+q)}.}
+#'   \item{\code{qr}}{If requested, the QR decomposition of the observed Fisher information matrix of size \code{(p+q) x (p+q)}.}
 #' }
 #'
 #' @note \strong{Warning:} At present \code{hlm} cannot handle pure LM or LVLM models.  For datasets without censoring, please use the low-level functions \code{\link{lm_fit}} and \code{\link{lvlm_fit}} instead.
+#' @export
 hlm <- function(formula, data, subset, weights, na.action,
-                control, y, x, model, offset) {
+                control, model = TRUE, qr = TRUE, x = FALSE, y = FALSE, offset) {
   forms <- parse_formula(formula)
   # call parsing copied from lm with "| <- +" substitution
   cl <- match.call()
@@ -64,6 +65,10 @@ hlm <- function(formula, data, subset, weights, na.action,
   if(is.matrix(resp)) {
     if(ncol(resp) == 2) {
       delta <- resp[,2]
+      if(!all(delta %in% c(TRUE, FALSE))) {
+        stop("Second column of response must be logical vector.")
+      }
+      delta <- as.logical(delta)
       y <- resp[,1]
     } else {
       stop("Response term in `formula` must be a numeric vector or two-column matrix.")
@@ -91,22 +96,24 @@ hlm <- function(formula, data, subset, weights, na.action,
   cfit <- chlm_fit(y = y, delta = delta, X = X, Z = Z,
                    maxit = control$maxit,
                    epsilon = control$epsilon,
-                   splitE = control$splitE)
+                   splitE = control$splitE,
+                   nIRLS = control$nIRLS)
   if(cfit$iter >= control$maxit || cfit$error > control$epsilon) {
     warning("Fitting algorithm did not converge.")
   }
   # format output
-  out <- list(coefficients = list(beta = setNames(out$beta, Xnames),
-                                  gamma = setNames(out$gamma, Znames)),
-              loglik = out$loglik,
+  beta <- setNames(cfit$beta, Xnames)
+  gamma <- setNames(cfit$gamma, Znames)
+  out <- list(coefficients = list(beta = beta, gamma = gamma),
+              loglik = cfit$loglik,
               df.residual = length(y) - length(Xnames) - length(Znames),
               call = cl, terms = list(X = mtX, Z = mtZ))
   if(ret_y) out$y <- resp
-  if(ret_x) out$x <- x
+  if(ret_x) out$x <- list(X = X, Z = Z)
   if(model) out$model <- mf
   out$na.action <- attr(mf, "na.action")
-  out$qr <- qr(-chlm_hess(beta = out$beta, gamma = out$gamma,
-                          y = y, delta = delta, X = X, Z = Z))
+  if(qr) out$qr <- qr(-chlm_hess(beta = beta, gamma = gamma,
+                                 y = y, delta = delta, X = X, Z = Z))
   class(out) <- "hlm"
   out
 }

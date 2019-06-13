@@ -14,6 +14,8 @@ hlm_fit(y, X, Z, method = c("IRLS", "Fisher"), beta0, gamma0,
 
 \item{Z}{Variance covariate matrix of size \code{n x q}.}
 
+\item{method}{Which method to use for fitting the conditional LVLM model.  See \code{\link{lvlm_fit}}.}
+
 \item{beta0}{Optional initial mean parameter vector of length \code{p}.}
 
 \item{gamma0}{Optional initial variance parameter vector of length \code{q}.}

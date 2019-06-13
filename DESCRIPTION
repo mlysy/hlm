@@ -20,5 +20,6 @@ LinkingTo:
     Rcpp,
     RcppEigen
 Imports: 
-    Rcpp
+    Rcpp,
+    stats
 RoxygenNote: 6.1.1

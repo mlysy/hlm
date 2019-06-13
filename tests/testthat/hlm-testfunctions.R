@@ -16,6 +16,22 @@ max_xdiff <- function(x) {
   max(pmin(xdiff[,1], xdiff[,2]))
 }
 
+# create hlm formula
+get_form <- function(resp, x1, x2) {
+  if(length(resp) > 1) resp <- paste0("cbind(", resp[1], ", ", resp[2], ")")
+  form <- paste0(x1, collapse = " + ")
+  if(!missing(x2)) {
+    form <- paste0(form, " | ", paste0(x2, collapse = " + "))
+  }
+  formula(paste0(resp, " ~ ", form), env = parent.frame(n = 2))
+}
+
+# create model matrix with na.pass
+get_mm <- function(formula, data) {
+  X <- model.frame(formula, data, na.action = na.pass)
+  model.matrix(terms(X), X)
+}
+
 
 lvlm_loglik <- function(gamma, y2, Z) {
   Zg <- c(Z %*% gamma)

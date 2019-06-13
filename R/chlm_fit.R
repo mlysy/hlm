@@ -111,7 +111,7 @@ chlm_fit <- function(y, delta, X, Z, beta0, gamma0,
 #' @export
 chlm_control <- function(epsilon = 1e-5, maxit = 100,
                          nIRLS = 5, splitE = TRUE) {
-  list(epsilon = epsilon, maxit = maxit, method = method, nIRLS = nIRLS)
+  list(epsilon = epsilon, maxit = maxit, nIRLS = nIRLS, splitE = splitE)
 }
 
 

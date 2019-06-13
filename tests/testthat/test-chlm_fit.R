@@ -31,12 +31,3 @@ test_that("chlm_fit converges to the MLE", {
   }
 })
 
-## system.time({
-##   chfit2 <- chlm_fit_old(y = y, delta = delta,
-##                          X = X, W = Z, nreps = maxit, tol = epsilon)
-## })
-## optimCheck::optim_proj(xsol = c(chfit2$coef$beta, chfit2$coef$gamma),
-##                        fun = function(theta) {
-##                          chlm_loglik(theta[1:p], theta[p+1:q],
-##                                      y = y, delta = delta, X = X, Z = Z)
-##                        })

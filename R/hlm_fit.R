@@ -75,6 +75,7 @@ lvlm_fit <- function(y2, Z, method = c("IRLS", "Fisher", "LS"), gamma0,
 #' @template param-y
 #' @template param-X
 #' @template param-Z
+#' @param method Which method to use for fitting the conditional LVLM model.  See \code{\link{lvlm_fit}}.
 #' @template param-beta0
 #' @template param-gamma0
 #' @template param-maxit

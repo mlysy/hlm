@@ -4,7 +4,7 @@
 \alias{hlm_fit}
 \title{Low-level fitting function for the HLM model.}
 \usage{
-hlm_fit(y, X, Z, method = c("Fisher", "IRLS"), beta0, gamma0,
+hlm_fit(y, X, Z, method = c("IRLS", "Fisher"), beta0, gamma0,
   maxit = 100, epsilon = 1e-05)
 }
 \arguments{

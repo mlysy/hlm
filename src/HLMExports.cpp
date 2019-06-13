@@ -55,22 +55,31 @@ Eigen::VectorXd wlm_fit(Eigen::VectorXd y, Eigen::MatrixXd X,
 /// For the definition of an LVLM model, see file `LVLMFit.h`.
 ///
 /// @param[in] y2 Squared response vector of length `n`.
-/// @param[in] Z Covariate matrix of size `n x p`.
-/// @param[in] gamma0 Initial coefficient vector of length `p`, or scalar.
+/// @param[in] Z Covariate matrix of size `n x q`.
+/// @param[in] gamma0 Initial coefficient vector of length `q`, or scalar.
 /// @param[in] initLS If `true` use `gamma0` as initial value.  Otherwise, use least squares estimate calculated by LVLMFit::fitLS.
 /// @param[in] maxit Maximum number of algorithm steps.
 /// @param[in] epsilon Relative tolerance on the maximum loglikelihood value.
 ///
-/// @return The MLE coefficient vector of length `p`.
+/// @return An `Rcpp::List` with elements:
+///
+/// - `gamma`: The MLE of the coefficient vector of length `q`.
+/// - `loglik`: The value of the loglikelihood at the final step of the fitting algorithm.
+/// - `iter`: The actual number of algorithm steps.
+/// - `error`: The relative error on the loglikelihood at the terminal step.
+///
 // [[Rcpp::export("LVLM_FitFS")]]
-Eigen::VectorXd lvlm_fitFS(Eigen::VectorXd y2, Eigen::MatrixXd Z,
-			   Eigen::VectorXd gamma0,
-			   int maxit = 25, double epsilon = 1e-8,
-			   bool initLS = false) {
+Rcpp::List lvlm_fitFS(Eigen::VectorXd y2, Eigen::MatrixXd Z,
+		      Eigen::VectorXd gamma0,
+		      int maxit = 25, double epsilon = 1e-8,
+		      bool initLS = false) {
   int n = Z.rows();
-  int p = Z.cols();
-  Eigen::VectorXd gamma(p);
-  hlm::LVLMFit lvlm(n, p);
+  int q = Z.cols();
+  double llik;
+  int niter;
+  double error;
+  Eigen::VectorXd gamma(q);
+  hlm::LVLMFit lvlm(n, q);
   lvlm.fitControl(maxit, epsilon);
   lvlm.set_ZtZ(Z);
   if(initLS) {
@@ -78,7 +87,11 @@ Eigen::VectorXd lvlm_fitFS(Eigen::VectorXd y2, Eigen::MatrixXd Z,
   } else {
     lvlm.fitFS(gamma, y2, Z, gamma0, false);
   }
-  return gamma;
+  lvlm.fitStats(llik, niter, error);
+  return List::create(_["gamma"] = gamma,
+		      _["loglik"] = llik,
+		      _["iter"] = niter,
+		      _["error"] = error);
 }
 
 /// Fit a log-variance linear model using Iteratively Reweighted Least Squares algorithm.
@@ -86,29 +99,42 @@ Eigen::VectorXd lvlm_fitFS(Eigen::VectorXd y2, Eigen::MatrixXd Z,
 /// For the definition of an LVLM model, see file `LVLMFit.h`.
 ///
 /// @param[in] y2 Squared response vector of length `n`.
-/// @param[in] Z Covariate matrix of size `n x p`.
-/// @param[in] gamma0 Initial coefficient vector of length `p`, or scalar.
+/// @param[in] Z Covariate matrix of size `n x q`.
+/// @param[in] gamma0 Initial coefficient vector of length `q`, or scalar.
 /// @param[in] initLS If `true` use `gamma0` as initial value.  Otherwise, use least squares estimate calculated by LVLMFit::fitLS.
 /// @param[in] maxit Maximum number of algorithm steps.
 /// @param[in] epsilon Relative tolerance on the maximum loglikelihood value.
 ///
-/// @return The MLE coefficient vector of length `p`.
+/// @return An `Rcpp::List` with elements:
+///
+/// - `gamma`: The MLE of the coefficient vector of length `q`.
+/// - `loglik`: The value of the loglikelihood at the final step of the fitting algorithm.
+/// - `iter`: The actual number of algorithm steps.
+/// - `error`: The relative error on the loglikelihood at the terminal step.
+///
 // [[Rcpp::export("LVLM_FitIRLS")]]
-Eigen::VectorXd lvlm_fitIRLS(Eigen::VectorXd y2, Eigen::MatrixXd Z,
-			     Eigen::VectorXd gamma0,
-			     int maxit = 25, double epsilon = 1e-8,
-			     bool initLS = false) {
+Rcpp::List lvlm_fitIRLS(Eigen::VectorXd y2, Eigen::MatrixXd Z,
+			Eigen::VectorXd gamma0,
+			int maxit = 25, double epsilon = 1e-8,
+			bool initLS = false) {
   int n = Z.rows();
-  int p = Z.cols();
-  Eigen::VectorXd gamma(p);
-  hlm::LVLMFit lvlm(n, p);
+  int q = Z.cols();
+  double llik;
+  int niter;
+  double error;
+  Eigen::VectorXd gamma(q);
+  hlm::LVLMFit lvlm(n, q);
   lvlm.fitControl(maxit, epsilon);
   if(initLS) {
     lvlm.fitIRLS(gamma, y2, Z);
   } else {
     lvlm.fitIRLS(gamma, y2, Z, gamma0);
   }
-  return gamma;
+  lvlm.fitStats(llik, niter, error);
+  return List::create(_["gamma"] = gamma,
+		      _["loglik"] = llik,
+		      _["iter"] = niter,
+		      _["error"] = error);
 }
 
 /// Fit a log-variance linear model using the Least Squares algorithm.
@@ -116,15 +142,15 @@ Eigen::VectorXd lvlm_fitIRLS(Eigen::VectorXd y2, Eigen::MatrixXd Z,
 /// For the definition of an LVLM model, see file `LVLMFit.h`.
 ///
 /// @param[in] logY2 Log of squared response vector of length `n`.
-/// @param[in] Z Covariate matrix of size `n x p`.
+/// @param[in] Z Covariate matrix of size `n x q`.
 ///
-/// @return The least-squares estimated coefficient vector of length `p`.
+/// @return The least-squares estimated coefficient vector of length `q`.
 // [[Rcpp::export("LVLM_FitLS")]]
 Eigen::VectorXd lvlm_fitLS(Eigen::VectorXd logY2, Eigen::MatrixXd Z) {
   int n = Z.rows();
-  int p = Z.cols();
-  Eigen::VectorXd gamma(p);
-  hlm::LVLMFit lvlm(n, p);
+  int q = Z.cols();
+  Eigen::VectorXd gamma(q);
+  hlm::LVLMFit lvlm(n, q);
   lvlm.set_ZtZ(Z);
   lvlm.fitLS(gamma, logY2, Z, false);
   return gamma;
@@ -147,7 +173,7 @@ Eigen::VectorXd lvlm_fitLS(Eigen::VectorXd logY2, Eigen::MatrixXd Z) {
 ///
 /// - `beta`, `gamma`: The MLE mean and variance coefficient vectors of length `p` and `q`.
 /// - `loglik`: The value of the loglikelihood at the final step of the fitting algorithm.
-/// - `niter`: The actual number of algorithm steps.
+/// - `iter`: The actual number of algorithm steps.
 /// - `error`: The relative error on the loglikelihood at the terminal step.
 ///
 // [[Rcpp::export("HLM_Fit")]]
@@ -171,6 +197,6 @@ Rcpp::List hlm_fit(Eigen::VectorXd y,
   return List::create(_["beta"] = beta,
 		      _["gamma"] = gamma,
 		      _["loglik"] = llik,
-		      _["niter"] = niter,
+		      _["iter"] = niter,
 		      _["error"] = error);
 }

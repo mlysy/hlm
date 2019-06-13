@@ -1,20 +1,20 @@
 Package: hlm
-Title: What the Package Does (One Line, Title Case)
+Title: Inference for a Heteroscedastic Linear Model
 Version: 0.0.0.9000
-Authors@R: 
-    person(given = "First",
-           family = "Last",
-           role = c("aut", "cre"),
-           email = "first.last@example.com")
-Description: What the package does (one paragraph).
-License: What license it uses
+Authors@R: c(person("Martin", "Lysy", role = c("aut", "cre"),
+                    email = "mlysy@uwaterloo.ca"),
+             person("Tian", "You", role = "aut"),
+	     person("Yifan", "Wang", role = "aut"))
+Description: Provides efficient algorithms to compute the MLE of a heteroscedastic regression model, with linear mean and log-linear variance covariates.  An Expectation-Maximization algorithm is provided for right-censored responses, which are expected in the context of survival analysis for the corresponding heteroscedastic accelerated failure-time model of Wang et al (2019).  
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Suggests: 
     knitr,
     rmarkdown,
     testthat,
-    numDeriv
+    numDeriv,
+    optimCheck
 VignetteBuilder: knitr
 LinkingTo: 
     Rcpp,

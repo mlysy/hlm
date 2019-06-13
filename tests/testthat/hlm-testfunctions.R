@@ -10,6 +10,13 @@ relerr <- function(x_new, x_old) {
   abs(x_new - x_old)/(.1 + abs(x_new))
 }
 
+# max of min of abs and rel error
+max_xdiff <- function(x) {
+  xdiff <- abs(diff(x))
+  max(pmin(xdiff[,1], xdiff[,2]))
+}
+
+
 lvlm_loglik <- function(gamma, y2, Z) {
   Zg <- c(Z %*% gamma)
   -.5 * sum(y2/exp(Zg) + Zg)

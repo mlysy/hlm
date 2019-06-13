@@ -31,16 +31,18 @@
 #' \describe{
 #'   \item{\code{coefficients}}{A list with elements \code{beta} and \code{gamma} containing the coefficient MLEs.}
 #'   \item{\code{loglik}}{The loglikelihood at the MLE.}
-#'   \item{\code{model}}{If requested (the default), the model frame.}
 #'   \item{\code{df.residual}}{The residual degrees of freedom.}
 #'   \item{\code{iter}}{The number of iterations used in the fitting algorithm.}
 #'   \item{\code{call}}{The matched call.}
-#'   \item{\code{terms}}{The \code{terms} object used.}
+#'   \item{\code{terms}}{A list with elements \code{X} and \code{Z} giving the \code{terms} object for mean and variance models.}
 #'   \item{\code{y}}{If requested, the response used.}
 #'   \item{\code{x}}{If requested, a list with elements \code{X} and \code{Z} giving the mean and variance model matrices uses.}
 #'   \item{\code{model}}{If requested, the \code{model.frame} used.}
 #'   \item{\code{na.action}}{(Where relevant) information returned by \code{model.frame} on the special handling of \code{NA}s.}
+#'   \item{\code{qr}}{The QR decomposition of the observed Fisher information matrix of size \code{(p+q) x (p+q)}.}
 #' }
+#'
+#' @note \strong{Warning:} At present \code{hlm} cannot handle pure LM or LVLM models.  For datasets without censoring, please use the low-level functions \code{\link{lm_fit}} and \code{\link{lvlm_fit}} instead.
 hlm <- function(formula, data, subset, weights, na.action,
                 control, y, x, model, offset) {
   forms <- parse_formula(formula)
@@ -56,15 +58,18 @@ hlm <- function(formula, data, subset, weights, na.action,
   mf <- eval(mf, parent.frame())
   ## mt <- attr(mf, "terms")
   # extract relevant terms for fitting
-  y <- model.response(mf, "numeric")
-  if(is.matrix(y)) {
-    if(ncol(y) == 2) {
-      delta <- y[,2]
-      y <- y[,1]
+  ret_y <- y
+  ret_x <- x
+  resp <- model.response(mf, "numeric")
+  if(is.matrix(resp)) {
+    if(ncol(resp) == 2) {
+      delta <- resp[,2]
+      y <- resp[,1]
     } else {
       stop("Response term in `formula` must be a numeric vector or two-column matrix.")
     }
   } else {
+    y <- resp
     delta <- rep(TRUE, length(y))
   }
   w <- as.vector(model.weights(mf))
@@ -75,11 +80,35 @@ hlm <- function(formula, data, subset, weights, na.action,
   if(!is.null(offset)) {
     warning("'offset' term(s) currently ignored.")
   }
+  if(missing(control)) control <- chlm_control()
   # mean and variance model terms
   mtX <- terms(forms$X, data = data)
   mtZ <- terms(forms$Z, data = data)
   X <- model.matrix(mtX, mf)
   Z <- model.matrix(mtZ, mf)
+  Xnames <- colnames(X)
+  Znames <- colnames(Z)
+  cfit <- chlm_fit(y = y, delta = delta, X = X, Z = Z,
+                   maxit = control$maxit,
+                   epsilon = control$epsilon,
+                   splitE = control$splitE)
+  if(cfit$iter >= control$maxit || cfit$error > control$epsilon) {
+    warning("Fitting algorithm did not converge.")
+  }
+  # format output
+  out <- list(coefficients = list(beta = setNames(out$beta, Xnames),
+                                  gamma = setNames(out$gamma, Znames)),
+              loglik = out$loglik,
+              df.residual = length(y) - length(Xnames) - length(Znames),
+              call = cl, terms = list(X = mtX, Z = mtZ))
+  if(ret_y) out$y <- resp
+  if(ret_x) out$x <- x
+  if(model) out$model <- mf
+  out$na.action <- attr(mf, "na.action")
+  out$qr <- qr(-chlm_hess(beta = out$beta, gamma = out$gamma,
+                          y = y, delta = delta, X = X, Z = Z))
+  class(out) <- "hlm"
+  out
 }
 
 #--- helper functions ----------------------------------------------------------

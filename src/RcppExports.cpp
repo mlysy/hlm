@@ -32,7 +32,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // lvlm_fitFS
-Eigen::VectorXd lvlm_fitFS(Eigen::VectorXd y2, Eigen::MatrixXd Z, Eigen::VectorXd gamma0, int maxit, double epsilon, bool initLS);
+Rcpp::List lvlm_fitFS(Eigen::VectorXd y2, Eigen::MatrixXd Z, Eigen::VectorXd gamma0, int maxit, double epsilon, bool initLS);
 RcppExport SEXP _hlm_lvlm_fitFS(SEXP y2SEXP, SEXP ZSEXP, SEXP gamma0SEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP initLSSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -48,7 +48,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // lvlm_fitIRLS
-Eigen::VectorXd lvlm_fitIRLS(Eigen::VectorXd y2, Eigen::MatrixXd Z, Eigen::VectorXd gamma0, int maxit, double epsilon, bool initLS);
+Rcpp::List lvlm_fitIRLS(Eigen::VectorXd y2, Eigen::MatrixXd Z, Eigen::VectorXd gamma0, int maxit, double epsilon, bool initLS);
 RcppExport SEXP _hlm_lvlm_fitIRLS(SEXP y2SEXP, SEXP ZSEXP, SEXP gamma0SEXP, SEXP maxitSEXP, SEXP epsilonSEXP, SEXP initLSSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

@@ -4,7 +4,7 @@
 \alias{lvlm_fit}
 \title{Low-level fitting function for the LVLM model.}
 \usage{
-lvlm_fit(y2, Z, method = c("Fisher", "IRLS", "LS"), gamma0, maxit = 25,
+lvlm_fit(y2, Z, method = c("IRLS", "Fisher", "LS"), gamma0, maxit = 25,
   epsilon = 1e-08)
 }
 \arguments{

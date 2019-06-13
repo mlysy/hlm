@@ -2,10 +2,14 @@
 % Please edit documentation in R/chlm_fit.R
 \name{chlm_fit}
 \alias{chlm_fit}
+\alias{chlm_control}
 \title{Low-level fitting functions for the HLM model.}
 \usage{
-chlm_fit(y, delta, X, Z, maxit = 1000, epsilon = 1e-08,
+chlm_fit(y, delta, X, Z, beta0, gamma0, maxit = 100, epsilon = 1e-08,
   splitE = FALSE, nIRLS = 5)
+
+chlm_control(epsilon = 1e-05, maxit = 100, nIRLS = 5,
+  splitE = TRUE)
 }
 \arguments{
 \item{y}{Vector of observations of length \code{n}.}
@@ -16,22 +20,26 @@ chlm_fit(y, delta, X, Z, maxit = 1000, epsilon = 1e-08,
 
 \item{Z}{Variance covariate matrix of size \code{n x q}.}
 
+\item{beta0}{Optional initial mean parameter vector of length \code{p}.}
+
+\item{gamma0}{Optional initial variance parameter vector of length \code{q}.}
+
 \item{maxit}{Maximum number of iteration of the fitting algorithm (see \strong{Details}).}
 
 \item{epsilon}{Tolerance threshold for termination of the algorithm (see \strong{Details}).}
 
 \item{splitE}{If \code{TRUE}, perform the E-step after each conditional M-step (see \strong{Details}).}
 
-\item{nIRLS}{Number of IRLS steps}
+\item{nIRLS}{Number of IRLS steps to take before switching to Fisher scoring.  Can be 0 or greater than \code{maxit} to do only one or the other.}
 }
 \value{
-An object of class \code{hlm} with the following elements:
+A list with the following elements:
 \describe{
   \item{\code{beta}}{The MLE of the mean parameter vector.}
   \item{\code{gamma}}{The MLE of the variance parameter vector.}
-  \item{\code{loglik}}{The value of the loglikelihood at the fitted \code{(beta, gamma)}.}
-  \item{\code{niter}}{The number of steps taken by the algorithm.}
-  \item{\code{error}}{The value of the error at the end of the algorithm.}
+  \item{\code{loglik}}{The value of the loglikelihood at the fitted parameter values.}
+  \item{\code{iter}}{The number of steps taken by the algorithm.}
+  \item{\code{error}}{The value of the loglikelihood relative error at the end of the algorithm.}
 }
 }
 \description{

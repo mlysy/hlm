@@ -4,12 +4,18 @@
 \name{hlm-package}
 \alias{hlm}
 \alias{hlm-package}
-\title{hlm: What the Package Does (One Line, Title Case)}
+\title{hlm: Inference for a Heteroscedastic Linear Model}
 \description{
-What the package does (one paragraph).
+Provides efficient algorithms to compute the MLE of a heteroscedastic regression model, with linear mean and log-linear variance covariates.  The package accommodates right-censored responses, which are expected in the context of survival analysis for the corresponding heteroscedastic accelerated failure-time model of Wang et al (2019).
 }
 \author{
-\strong{Maintainer}: First Last \email{first.last@example.com}
+\strong{Maintainer}: Martin Lysy \email{mlysy@uwaterloo.ca}
+
+Authors:
+\itemize{
+  \item Tian You
+  \item Yifan Wang
+}
 
 }
 \keyword{internal}

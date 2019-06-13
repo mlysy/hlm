@@ -29,15 +29,15 @@ An object of class \code{hlm} with the following elements:
 \describe{
   \item{\code{coefficients}}{A list with elements \code{beta} and \code{gamma} containing the coefficient MLEs.}
   \item{\code{loglik}}{The loglikelihood at the MLE.}
-  \item{\code{model}}{If requested (the default), the model frame.}
   \item{\code{df.residual}}{The residual degrees of freedom.}
   \item{\code{iter}}{The number of iterations used in the fitting algorithm.}
   \item{\code{call}}{The matched call.}
-  \item{\code{terms}}{The \code{terms} object used.}
+  \item{\code{terms}}{A list with elements \code{X} and \code{Z} giving the \code{terms} object for mean and variance models.}
   \item{\code{y}}{If requested, the response used.}
   \item{\code{x}}{If requested, a list with elements \code{X} and \code{Z} giving the mean and variance model matrices uses.}
   \item{\code{model}}{If requested, the \code{model.frame} used.}
   \item{\code{na.action}}{(Where relevant) information returned by \code{model.frame} on the special handling of \code{NA}s.}
+  \item{\code{qr}}{The QR decomposition of the observed Fisher information matrix of size \code{(p+q) x (p+q)}.}
 }
 }
 \description{
@@ -61,4 +61,7 @@ where the vertical bar separates mean and variance components.  If no bar is fou
 Right censoring of observations is supported by specifying the response as a two-column matrix, where the first column is the response and the second column is a censoring status indicator with `0`: censored and `1`: uncensored.
 
 Fitting the \code{hlm} model is done by blockwise coordinate ascent, alternatively maximing the mean parameters by weighted least-squares, and the variance parameters either via Fisher scoring or Iteratively Reweighted Least Squares.  When there is right-censoring, these maximization steps are embedded within an Expectation-Conditional-Maximization algorithm.
+}
+\note{
+\strong{Warning:} At present \code{hlm} cannot handle pure LM or LVLM models.  For datasets without censoring, please use the low-level functions \code{\link{lm_fit}} and \code{\link{lvlm_fit}} instead.
 }

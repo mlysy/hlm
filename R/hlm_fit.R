@@ -49,24 +49,25 @@ lvlm_fit <- function(y2, Z, method = c("IRLS", "Fisher", "LS"), gamma0,
     if(missing(gamma0)) {
       gamma <- LVLM_FitFS(y2 = y2, Z = Z,
                           maxit = maxit, epsilon = epsilon,
-                          gamma0 = 0, initLS = TRUE)
+                          gamma0 = 0, initLS = TRUE)$gamma
     } else {
       gamma <- LVLM_FitFS(y2 = y2, Z = Z, maxit = maxit, epsilon = epsilon,
-                          gamma0 = gamma0, initLS = FALSE)
+                          gamma0 = gamma0, initLS = FALSE)$gamma
     }
   } else if(method == "IRLS") {
     if(missing(gamma0)) {
       gamma <- LVLM_FitIRLS(y2 = y2, Z = Z,
                             maxit = maxit, epsilon = epsilon,
-                            gamma0 = 0, initLS = TRUE)
+                            gamma0 = 0, initLS = TRUE)$gamma
     } else {
       gamma <- LVLM_FitIRLS(y2 = y2, Z = Z,
                             maxit = maxit, epsilon = epsilon,
-                            gamma0 = gamma0, initLS = FALSE)
+                            gamma0 = gamma0, initLS = FALSE)$gamma
     }
   } else if(method == "LS") {
     gamma <- LVLM_FitLS(logY2 = log(y2), Z = Z)
   }
+  gamma
 }
 
 #' Low-level fitting function for the HLM model.
@@ -74,8 +75,8 @@ lvlm_fit <- function(y2, Z, method = c("IRLS", "Fisher", "LS"), gamma0,
 #' @template param-y
 #' @template param-X
 #' @template param-Z
-#' @param beta0 Optional initial mean parameter vector of length \code{p}.
-#' @param gamma0 Optional initial variance parameter vector of length \code{q}.
+#' @template param-beta0
+#' @template param-gamma0
 #' @template param-maxit
 #' @template param-epsilon
 #'

@@ -65,3 +65,6 @@ Fitting the \code{hlm} model is done by blockwise coordinate ascent, alternative
 \note{
 \strong{Warning:} At present \code{hlm} cannot handle pure LM or LVLM models.  For datasets without censoring, please use the low-level functions \code{\link{lm_fit}} and \code{\link{lvlm_fit}} instead.
 }
+\seealso{
+Current methods for \code{hlm} objects are: \code{print}, \code{nobs}, \code{vcov}, and \code{\link{summary}}.
+}

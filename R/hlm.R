@@ -43,9 +43,12 @@
 #' }
 #'
 #' @note \strong{Warning:} At present \code{hlm} cannot handle pure LM or LVLM models.  For datasets without censoring, please use the low-level functions \code{\link{lm_fit}} and \code{\link{lvlm_fit}} instead.
+#'
+#' @seealso Current methods for \code{hlm} objects are: \code{print}, \code{nobs}, \code{vcov}, and \code{\link{summary}}.
 #' @export
 hlm <- function(formula, data, subset, weights, na.action,
-                control, model = TRUE, qr = TRUE, x = FALSE, y = FALSE, offset) {
+                control, model = TRUE, qr = TRUE,
+                x = FALSE, y = FALSE, offset) {
   forms <- parse_formula(formula)
   # call parsing copied from lm with "| <- +" substitution
   cl <- match.call()
@@ -87,8 +90,8 @@ hlm <- function(formula, data, subset, weights, na.action,
   }
   if(missing(control)) control <- chlm_control()
   # mean and variance model terms
-  mtX <- terms(forms$X, data = data)
-  mtZ <- terms(forms$Z, data = data)
+  mtX <- if(!missing(data)) terms(forms$X, data = data) else terms(forms$X)
+  mtZ <- if(!missing(data)) terms(forms$Z, data = data) else terms(forms$Z)
   X <- model.matrix(mtX, mf)
   Z <- model.matrix(mtZ, mf)
   Xnames <- colnames(X)
@@ -105,7 +108,7 @@ hlm <- function(formula, data, subset, weights, na.action,
   beta <- setNames(cfit$beta, Xnames)
   gamma <- setNames(cfit$gamma, Znames)
   out <- list(coefficients = list(beta = beta, gamma = gamma),
-              loglik = cfit$loglik,
+              loglik = cfit$loglik, iter = cfit$iter,
               df.residual = length(y) - length(Xnames) - length(Znames),
               call = cl, terms = list(X = mtX, Z = mtZ))
   if(ret_y) out$y <- resp

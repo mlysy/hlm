@@ -24,12 +24,18 @@ lvlm_fit(y2, Z, method = c("IRLS", "Fisher", "LS"), gamma0, maxit = 25,
 The MLE (or least-squares estimate) of \code{gamma} as a vector of length \code{q}.
 }
 \description{
-Low-level fitting function for the LVLM model.
+Estimates the coefficients of a log-variance linear model (LVLM).  See \strong{Details}.
 }
 \details{
-the log-variance linear model (LVLM) is defined as...
+The log-variance linear model (LVLM) is defined as
+\deqn{
+y_i \mid \boldsymbol{z}_i \stackrel{\mathrm{ind}}{\sim} \mathcal N\big(0, \exp(\boldsymbol{z}_i'\boldsymbol{\gamma})\big),
+}{
+y_i | z_i ~ind N(0, exp(z_i'\gamma)),
+}
+where for each subject \eqn{i}, \eqn{y_i} is the response, and \eqn{\boldsymbol{z}_i \in \mathbb{R}^q}{z_i \in R^q} is the variance covariate vector.
 
-Three types of fitting algorithms are provided.  \code{method = Fisher} and \code{IRLS} are Fisher Scoring and Iteratively Reweighted Least-Squares MLE-finding algorithms, respectively.  The former is faster while the latter is more stable.  \code{method = LS} is a least-squares estimator, which is the fastest.  It is a consistent estimator but not as efficient as the MLE.
+Three types of fitting algorithms for \eqn{\boldsymbol{\gamma}}{\gamma} are provided.  \code{method = Fisher} and \code{IRLS} are Fisher Scoring and Iteratively Reweighted Least-Squares MLE-finding algorithms, respectively.  The former is faster while the latter is more stable.  \code{method = LS} is a least-squares estimator, which is the fastest.  It is a consistent estimator but not as efficient as the MLE.
 
 \strong{Warning:} This \R wrapper function provides a direct interface to the C++ source code.  Incorrect argument specification may lead to abrupt termination of the \R session.
 }

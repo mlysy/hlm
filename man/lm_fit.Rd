@@ -17,7 +17,7 @@ lm_fit(y, X, w)
 MLE estimate of \code{beta} as a vector of length \code{p}.
 }
 \description{
-Low-level fitting function for the LM model.
+Calculates the MLE of the coefficients of the usual linear regression model (LM).
 }
 \details{
 The LM model is defined as
@@ -26,7 +26,7 @@ The LM model is defined as
 }{
 y_i | x_i ~ind N(x_i'\beta, 1/w_i),
 }
-where ...
+where for each subject \eqn{i}, \eqn{y_i} is the response, \eqn{\boldsymbol{x}_i \in \mathbb{R}^p}{x_i \in R^p} is the mean covariate vector, and \eqn{w_i} is an optional positive weight (defaults to 1).
 
 \strong{Warning:} This \R wrapper function provides a direct interface to the C++ source code.  Incorrect argument specification may lead to abrupt termination of the \R session.
 }

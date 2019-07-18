@@ -1,5 +1,7 @@
 #' Fit the heteroscedastic linear model.
 #'
+#' Calculates the MLE of a heteroscedastic linear model (HLM) with possibly right-censored responses.  See \strong{Details}.
+#'
 #' @param formula An object of class \code{formula} (or one that can be coerced to that class).  See \strong{Details}.
 #' @param data An optional data frame, list or environment containing the variables in the model.  If not found in \code{data}, the variables are taken from \code{environment(formula)}.
 #' @param subset An optional vector specifying a subset of observations to be used in the fitting process.
@@ -9,21 +11,15 @@
 #' @param model,x,y,qr Logical values indicating which data elements should be returned in the output.  These correspond to the response, the covariance matrices, the \code{model.frame}, and the QR decomposition of the hessian of the negative loglikelihood, respectively.  See \code{stats::lm}.
 #' @param offset Currently ignored, as are \code{offset} terms in the formula.
 #'
-#' @details The heteroscedastic linear model (HLM) is of the form
-#' \deqn{
-#' y_i \mid \boldsymbol{x}_i, \boldsymbol{z}_i \stackrel{\mathrm{ind}}{\sim} \mathcal N\big(\boldsymbol{x}_i'\boldsymbol{\beta}, \exp(\boldsymbol{z}_i'\boldsymbol{\gamma})\big),
-#' }{
-#' y_i | x_i, z_i ~ind N(x_i'\beta, \exp(z_i'\gamma)),
-#' }
-#' where for each subject \eqn{i}, \eqn{y_i} is the response, and \eqn{\boldsymbol{x}_i \in \mathbb{R}^p}{x_i \in R^p} and \eqn{\boldsymbol{z}_i \in \mathbb{R}^q}{z_i \in R^q} are mean and variance covariate vectors, respectively.
+#' @template details-hlm
 #'
-#' The \code{formula} term is specified as
+#' @details The \code{formula} term is specified as e.g.,
 #' \preformatted{
 #' y ~ x1 + x2 | z1 + z2
 #' }
 #' where the vertical bar separates mean and variance components.  If no bar is found, an intercept variance term of the form \code{y ~ x1 + x2 | 1} is assumed, corresponding to the usual linear model (but with a different parametrization).
 #'
-#' Right censoring of observations is supported by specifying the response as a two-column matrix, where the first column is the response and the second column is a censoring status indicator with `0`: censored and `1`: uncensored.
+#' Right censoring of observations is supported by specifying the response as a two-column matrix, where the first column is the response and the second column is a censoring status indicator with \code{0}: censored and \code{1}: uncensored.
 #'
 #' Fitting the \code{hlm} model is done by blockwise coordinate ascent, alternatively maximing the mean parameters by weighted least-squares, and the variance parameters either via Fisher scoring or Iteratively Reweighted Least Squares.  When there is right-censoring, these maximization steps are embedded within an Expectation-Conditional-Maximization algorithm.
 #'

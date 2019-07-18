@@ -1,4 +1,4 @@
-#' Low-level fitting functions for the HLM model.
+#' Low-level fitting functions for the censored HLM model.
 #'
 #' @name chlm_fit
 #' @aliases chlm_control
@@ -23,7 +23,9 @@
 #'   \item{\code{error}}{The value of the loglikelihood relative error at the end of the algorithm.}
 #' }
 #'
-#' @details The fitting algorithm is an Expectation-Conditional-Maximization (ECM) algorithm extending the alternating weighted-LM/GLM updates of \code{beta} and \code{gamma}, proposed by Smyth??? for the uncensored setting.  The ECM algorithm terminates when either \code{maxit} iterations have been reached, or when
+#' @template details-hlm
+#'
+#' @details The fitting algorithm is an Expectation-Conditional-Maximization (ECM) algorithm extending the alternating weighted-LM/GLM updates of \code{beta} and \code{gamma}, proposed by Smyth (1989) for the uncensored setting.  The ECM algorithm terminates when either \code{maxit} iterations have been reached, or when
 #' \preformatted{
 #' |ll_curr - ll_prev| / (0.1 + |ll_curr|) < epsilon,
 #' }
@@ -36,6 +38,7 @@
 #'   \item \code{residual} method.  Perhaps use expected lifetime for the censored observations?
 #'   \item Separate into \code{chlm} and \code{hlm} classes?
 #' }
+#' @references Smyth, G.K. "Generalized Linear Models with Varying Dispersion." \emph{Journal of the Royal Statistical Society Series B} 51:1 (1989): 47-60.  \url{https://www.jstor.org/stable/2345840}.
 #' @export
 chlm_fit <- function(y, delta, X, Z, beta0, gamma0,
                      maxit = 100, epsilon = 1e-8,

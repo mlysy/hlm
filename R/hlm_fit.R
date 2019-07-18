@@ -1,5 +1,7 @@
 #' Low-level fitting function for the LM model.
 #'
+#' Calculates the MLE of the coefficients of the usual linear regression model (LM).
+#'
 #' @template param-y
 #' @template param-X
 #' @param w Optional positive weights vector of length \code{n}.
@@ -12,7 +14,7 @@
 #' }{
 #' y_i | x_i ~ind N(x_i'\beta, 1/w_i),
 #' }
-#' where ...
+#' where for each subject \eqn{i}, \eqn{y_i} is the response, \eqn{\boldsymbol{x}_i \in \mathbb{R}^p}{x_i \in R^p} is the mean covariate vector, and \eqn{w_i} is an optional positive weight (defaults to 1).
 #'
 #' @template warn-cpp
 #' @export
@@ -27,6 +29,8 @@ lm_fit <- function(y, X, w) {
 
 #' Low-level fitting function for the LVLM model.
 #'
+#' Estimates the coefficients of a log-variance linear model (LVLM).  See \strong{Details}.
+#'
 #' @param y2 Square of response vector of length \code{n}.
 #' @template param-Z
 #' @param method Which fitting algorithm to use.  See \strong{Details}.
@@ -36,9 +40,15 @@ lm_fit <- function(y, X, w) {
 #'
 #' @return The MLE (or least-squares estimate) of \code{gamma} as a vector of length \code{q}.
 #'
-#' @details the log-variance linear model (LVLM) is defined as...
+#' @details The log-variance linear model (LVLM) is defined as
+#' \deqn{
+#' y_i \mid \boldsymbol{z}_i \stackrel{\mathrm{ind}}{\sim} \mathcal N\big(0, \exp(\boldsymbol{z}_i'\boldsymbol{\gamma})\big),
+#' }{
+#' y_i | z_i ~ind N(0, exp(z_i'\gamma)),
+#' }
+#' where for each subject \eqn{i}, \eqn{y_i} is the response, and \eqn{\boldsymbol{z}_i \in \mathbb{R}^q}{z_i \in R^q} is the variance covariate vector.
 #'
-#' Three types of fitting algorithms are provided.  \code{method = Fisher} and \code{IRLS} are Fisher Scoring and Iteratively Reweighted Least-Squares MLE-finding algorithms, respectively.  The former is faster while the latter is more stable.  \code{method = LS} is a least-squares estimator, which is the fastest.  It is a consistent estimator but not as efficient as the MLE.
+#' Three types of fitting algorithms for \eqn{\boldsymbol{\gamma}}{\gamma} are provided.  \code{method = Fisher} and \code{IRLS} are Fisher Scoring and Iteratively Reweighted Least-Squares MLE-finding algorithms, respectively.  The former is faster while the latter is more stable.  \code{method = LS} is a least-squares estimator, which is the fastest.  It is a consistent estimator but not as efficient as the MLE.
 #'
 #' @template warn-cpp
 #' @export
@@ -70,7 +80,9 @@ lvlm_fit <- function(y2, Z, method = c("IRLS", "Fisher", "LS"), gamma0,
   gamma
 }
 
-#' Low-level fitting function for the HLM model.
+#' Low-level fitting function for the uncensored HLM model.
+#'
+#' Calculates the MLE of the coefficients of the heteroscedastic linear model (HLM).  See \strong{Details}.
 #'
 #' @template param-y
 #' @template param-X
@@ -90,7 +102,11 @@ lvlm_fit <- function(y2, Z, method = c("IRLS", "Fisher", "LS"), gamma0,
 #'   \item{\code{tolerance}}{The loglikelihood relative error at the last step.}
 #' }
 #'
-#' @details The tuning parameters of the LVLM fitting methods are tuned to their default values in \code{\link{lvlm_fit}}.
+#' @template details-hlm
+#'
+#' @details The low-level function \code{hlm_fit} assumes that the response vector is fully observed (uncensored).  See \code{\link{chlm_fit}} for the corresponding function with censoring, or the higher-level interface \code{\link{hlm}}.
+#'
+#' The tuning parameters of the LVLM fitting methods are tuned to their default values in \code{\link{lvlm_fit}}.
 #'
 #' @template warn-cpp
 #' @export

@@ -2,7 +2,7 @@
 % Please edit documentation in R/hlm_fit.R
 \name{hlm_fit}
 \alias{hlm_fit}
-\title{Low-level fitting function for the HLM model.}
+\title{Low-level fitting function for the uncensored HLM model.}
 \usage{
 hlm_fit(y, X, Z, method = c("IRLS", "Fisher"), beta0, gamma0,
   maxit = 100, epsilon = 1e-05)
@@ -35,9 +35,19 @@ A list with elements:
 }
 }
 \description{
-Low-level fitting function for the HLM model.
+Calculates the MLE of the coefficients of the heteroscedastic linear model (HLM).  See \strong{Details}.
 }
 \details{
+The heteroscedastic linear model (HLM) is defined as
+\deqn{
+y_i \mid \boldsymbol{x}_i, \boldsymbol{z}_i \stackrel{\mathrm{ind}}{\sim} \mathcal N\big(\boldsymbol{x}_i'\boldsymbol{\beta}, \exp(\boldsymbol{z}_i'\boldsymbol{\gamma})\big),
+}{
+y_i | x_i, z_i ~ind N(x_i'\beta, exp(z_i'\gamma)),
+}
+where for each subject \eqn{i}, \eqn{y_i} is the response, and \eqn{\boldsymbol{x}_i \in \mathbb{R}^p}{x_i \in R^p} and \eqn{\boldsymbol{z}_i \in \mathbb{R}^q}{z_i \in R^q} are mean and variance covariate vectors, respectively.
+
+The low-level function \code{hlm_fit} assumes that the response vector is fully observed (uncensored).  See \code{\link{chlm_fit}} for the corresponding function with censoring, or the higher-level interface \code{\link{hlm}}.
+
 The tuning parameters of the LVLM fitting methods are tuned to their default values in \code{\link{lvlm_fit}}.
 
 \strong{Warning:} This \R wrapper function provides a direct interface to the C++ source code.  Incorrect argument specification may lead to abrupt termination of the \R session.

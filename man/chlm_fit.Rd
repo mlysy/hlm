@@ -3,7 +3,7 @@
 \name{chlm_fit}
 \alias{chlm_fit}
 \alias{chlm_control}
-\title{Low-level fitting functions for the HLM model.}
+\title{Low-level fitting functions for the censored HLM model.}
 \usage{
 chlm_fit(y, delta, X, Z, beta0, gamma0, maxit = 100, epsilon = 1e-08,
   splitE = FALSE, nIRLS = 5)
@@ -43,10 +43,18 @@ A list with the following elements:
 }
 }
 \description{
-Low-level fitting functions for the HLM model.
+Low-level fitting functions for the censored HLM model.
 }
 \details{
-The fitting algorithm is an Expectation-Conditional-Maximization (ECM) algorithm extending the alternating weighted-LM/GLM updates of \code{beta} and \code{gamma}, proposed by Smyth??? for the uncensored setting.  The ECM algorithm terminates when either \code{maxit} iterations have been reached, or when
+The heteroscedastic linear model (HLM) is defined as
+\deqn{
+y_i \mid \boldsymbol{x}_i, \boldsymbol{z}_i \stackrel{\mathrm{ind}}{\sim} \mathcal N\big(\boldsymbol{x}_i'\boldsymbol{\beta}, \exp(\boldsymbol{z}_i'\boldsymbol{\gamma})\big),
+}{
+y_i | x_i, z_i ~ind N(x_i'\beta, exp(z_i'\gamma)),
+}
+where for each subject \eqn{i}, \eqn{y_i} is the response, and \eqn{\boldsymbol{x}_i \in \mathbb{R}^p}{x_i \in R^p} and \eqn{\boldsymbol{z}_i \in \mathbb{R}^q}{z_i \in R^q} are mean and variance covariate vectors, respectively.
+
+The fitting algorithm is an Expectation-Conditional-Maximization (ECM) algorithm extending the alternating weighted-LM/GLM updates of \code{beta} and \code{gamma}, proposed by Smyth (1989) for the uncensored setting.  The ECM algorithm terminates when either \code{maxit} iterations have been reached, or when
 \preformatted{
 |ll_curr - ll_prev| / (0.1 + |ll_curr|) < epsilon,
 }
@@ -59,4 +67,7 @@ where \code{ll_curr} and \code{ll_prev} are the loglikelihood values at the curr
   \item \code{residual} method.  Perhaps use expected lifetime for the censored observations?
   \item Separate into \code{chlm} and \code{hlm} classes?
 }
+}
+\references{
+Smyth, G.K. "Generalized Linear Models with Varying Dispersion." \emph{Journal of the Royal Statistical Society Series B} 51:1 (1989): 47-60.  \url{https://www.jstor.org/stable/2345840}.
 }

@@ -43,6 +43,8 @@
 #' @seealso Current methods for \code{hlm} objects are: \code{print}, \code{nobs}, \code{vcov}, and \code{\link{summary}}.
 #'
 #' @example examples/hlm.R
+#'
+#' @references Wang, Y., You, T., and Lysy, M. "A heteroscedastic accelerated failure time model for survival analysis" (2019): \url{https://arxiv.org/abs/1508.05137}.
 #' @export
 hlm <- function(formula, data, subset, weights, na.action,
                 control, model = TRUE, qr = TRUE,

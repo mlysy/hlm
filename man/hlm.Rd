@@ -77,6 +77,9 @@ vcov(M) # variance estimate
 # fit same model but with censoring
 hlm(cbind(log(time), status) ~ . | rx, data = colond)
 }
+\references{
+Wang, Y., You, T., and Lysy, M. "A heteroscedastic accelerated failure time model for survival analysis" (2019): \url{https://arxiv.org/abs/1508.05137}.
+}
 \seealso{
 Current methods for \code{hlm} objects are: \code{print}, \code{nobs}, \code{vcov}, and \code{\link{summary}}.
 }

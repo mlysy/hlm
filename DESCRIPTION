@@ -9,17 +9,19 @@ Description: Provides efficient algorithms to compute the MLE of a heteroscedast
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
+Depends:
+    R (>= 2.10)
 Suggests: 
     knitr,
     rmarkdown,
     testthat,
     numDeriv,
     optimCheck
-VignetteBuilder: knitr
 LinkingTo: 
     Rcpp,
     RcppEigen
 Imports: 
-    Rcpp,
+    Rcpp (>= 0.12.12),
     stats
+VignetteBuilder: knitr
 RoxygenNote: 6.1.1

@@ -56,14 +56,26 @@ The \code{formula} term is specified as e.g.,
 \preformatted{
 y ~ x1 + x2 | z1 + z2
 }
-where the vertical bar separates mean and variance components.  If no bar is found, an intercept variance term of the form \code{y ~ x1 + x2 | 1} is assumed, corresponding to the usual linear model (but with a different parametrization).
+where the vertical bar separates mean and variance components.  If no bar is provided, an intercept variance term of the form \code{y ~ x1 + x2 | 1} is assumed, corresponding to the usual linear model (but with a different parametrization).
 
-Right censoring of observations is supported by specifying the response as a two-column matrix, where the first column is the response and the second column is a censoring status indicator with \code{0}: censored and \code{1}: uncensored.
+Right censoring of observations is supported by specifying the response as a two-column matrix, where the first column is the response and the second column is a censoring status indicator with \code{0}: right-censored and \code{1}: uncensored.
 
 Fitting the \code{hlm} model is done by blockwise coordinate ascent, alternatively maximing the mean parameters by weighted least-squares, and the variance parameters either via Fisher scoring or Iteratively Reweighted Least Squares.  When there is right-censoring, these maximization steps are embedded within an Expectation-Conditional-Maximization algorithm.
 }
 \note{
 \strong{Warning:} At present \code{hlm} cannot handle pure LM or LVLM models.  For datasets without censoring, please use the low-level functions \code{\link{lm_fit}} and \code{\link{lvlm_fit}} instead.
+}
+\examples{
+summary(colond) # colon cancer dataset
+
+# fit model without censoring (i.e., ignoring it)
+M <- hlm(log(time) ~ . | rx, data = colond)
+M # brief display
+summary(M) # full summary
+vcov(M) # variance estimate
+
+# fit same model but with censoring
+hlm(cbind(log(time), status) ~ . | rx, data = colond)
 }
 \seealso{
 Current methods for \code{hlm} objects are: \code{print}, \code{nobs}, \code{vcov}, and \code{\link{summary}}.
